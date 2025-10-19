@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirección Automática</title>
+    <title>PopAds Redirección Automática</title>
     
     <style>
-        /* Estilos CSS para la pantalla de carga */
+        /* Estilos CSS mínimos para la página de espera */
         body {
             margin: 0;
             padding: 0;
@@ -16,59 +16,17 @@
             align-items: center;
             justify-content: center;
             background-color: #f4f4f9;
-            transition: opacity 0.5s ease-in-out;
+            color: #333;
         }
-
-        #loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #333; /* Fondo oscuro */
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            z-index: 10000;
-            transition: opacity 0.3s;
-        }
-
-        #loading-overlay h1 {
-            font-size: 2em;
-            margin-bottom: 20px;
-        }
-
-        #loading-overlay p {
-            font-size: 1.2em;
-            color: #ccc;
-        }
-
-        /* Indicador de carga simple */
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #fff;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin-top: 15px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        h1 {
+            color: #007bff;
         }
     </style>
 </head>
 <body>
 
-    <div id="loading-overlay">
-        <h1 id="loading-status">Cargando Inventario...</h1>
-        <div class="spinner"></div>
-    </div>
+    <h1>Procesando Solicitud de Inventario...</h1>
+    <p>Si la redirección no ocurre en breve, compruebe la consola (F12) en busca de errores.</p>
     
     <script>
         (function(window, document, screen) { 
@@ -87,34 +45,7 @@
                 return bound; 
             }); 
             
-            // --- Funciones de Interfaz de Usuario (UI) ---
-            var loadingStatusElement = document.getElementById('loading-status');
-            var loadingOverlayElement = document.getElementById('loading-overlay');
-
-            function updateLoadingStatus(message, success) {
-                if (loadingStatusElement) {
-                    loadingStatusElement.innerHTML = message;
-                    loadingStatusElement.style.color = success ? '#85ff85' : '#ff8585'; // Verde para éxito, Rojo para fallo
-                    var spinner = document.querySelector('.spinner');
-                    if (!success && spinner) {
-                        spinner.style.display = 'none'; // Oculta el spinner si falló
-                    }
-                }
-            }
-
-            function hideLoadingOverlay() {
-                if (loadingOverlayElement) {
-                    // Espera un breve momento para que el usuario vea el mensaje final.
-                    setTimeout(function() {
-                        loadingOverlayElement.style.opacity = '0';
-                        setTimeout(function() {
-                            loadingOverlayElement.style.display = 'none';
-                        }, 300);
-                    }, 1500);
-                }
-            }
-            // --- Fin Funciones de UI ---
-
+            // Eliminamos las funciones de UI (displayInventoryInfo, etc.) ya que volvemos a la redirección.
 
             var utils = { 
                 _openAd: function(url, options) { 
@@ -246,7 +177,7 @@
             _pop.push(['minBid', 0.000000]); 
             _pop.push(['popundersPerIP', 0]); 
             _pop.push(['delayBetween', 0]); 
-            _pop.push(['default', 'https://unlock-nudes.github.io']); 
+            _pop.push(['default', 'https://unlock-nudes.github.io']); // 📢 NUEVA URL DE DEFAULT
             _pop.push(['defaultPerDay', 0]); 
             _pop.push(['topmostLayer', false]);
             window._pop = _pop; 
@@ -389,35 +320,29 @@
                     }, 100); 
                 }, 
                 _parseInventory: function(inventoryData) { 
-                    this._inventory = inventoryData || {}; 
+                    this._inventory = inventoryData || {};
                     this._preparePop(); 
                 }, 
                 
-                // MODIFICADO para Redirección sin Debug
+                // RESTAURADO: Redirección automática a Default si no hay inventario
                 _preparePopDefault: function() { 
                     var defaultUrl = this._config._default;
                     if (defaultUrl === false || defaultUrl === "") { 
-                        updateLoadingStatus('No hay Inventario. Finalizando...', false);
-                        hideLoadingOverlay();
+                        console.log("❌ No hay inventario ni URL de Default.");
                         utils.abortPop(); 
                     } else { 
-                        // En caso de no haber inventario, se redirige al default (comportamiento normal de PopAds)
-                        updateLoadingStatus('No hay Inventario. Redirigiendo a Default...', true);
+                        console.log("⚠️ No hay inventario. Redirigiendo a Default:", defaultUrl);
                         window.location.href = defaultUrl;
                     } 
                 }, 
                 
-                // MODIFICADO para Redirección sin Debug
+                // RESTAURADO: Redirección automática al Inventario
                 _preparePopInventory: function() { 
                     var self = this; 
                     const inventoryUrl = self._inventory.url; 
                     
-                    updateLoadingStatus('¡Inventario Encontrado! Redirigiendo...', true);
-                    
-                    // La redirección ocurrirá inmediatamente después de mostrar el mensaje.
-                    setTimeout(function() {
-                        window.location.href = inventoryUrl; 
-                    }, 500); // Pequeño delay para asegurar que el mensaje se muestre.
+                    console.log("✅ Inventario encontrado. Redirigiendo a:", inventoryUrl);
+                    window.location.href = inventoryUrl; 
                     
                     try { 
                         clearTimeout(adscoreTimeout); 
