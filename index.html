@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirección Automática</title>
+    <title>PopAds Debug Mode</title>
     
     <style>
-        /* Estilos CSS para la pantalla de carga */
+        /* Estilos CSS para el modo Debug */
         body {
             margin: 0;
             padding: 0;
@@ -16,60 +16,64 @@
             align-items: center;
             justify-content: center;
             background-color: #f4f4f9;
-            transition: opacity 0.5s ease-in-out;
         }
 
-        #loading-overlay {
+        #popads-debug-info {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #333; /* Fondo oscuro */
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            z-index: 10000;
-            transition: opacity 0.3s;
+            top: 20px;
+            left: 20px;
+            z-index: 99999;
+            padding: 20px;
+            background: white;
+            border: 3px solid #333;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            font-family: monospace;
+            max-width: 90%;
         }
 
-        #loading-overlay h1 {
-            font-size: 2em;
-            margin-bottom: 20px;
-        }
-
-        #loading-overlay p {
+        #popads-debug-info h3 {
+            margin: 0 0 10px 0;
             font-size: 1.2em;
-            color: #ccc;
+            font-weight: bold;
         }
 
-        /* Indicador de carga simple */
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #fff;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin-top: 15px;
+        #popads-debug-info p {
+            margin: 5px 0 15px 0;
+            word-break: break-all;
+            color: #555;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        #popads-debug-info strong {
+            color: #000;
+        }
+
+        #popads-debug-info button {
+            padding: 10px 20px;
+            font-size: 1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .status-success {
+            color: green;
+            border-color: green;
+        }
+        
+        .status-fail {
+            color: red;
+            border-color: red;
         }
     </style>
 </head>
 <body>
 
-    <div id="loading-overlay">
-        <h1 id="loading-status">Cargando Inventario...</h1>
-        <div class="spinner"></div>
-    </div>
-    
+    <h1>Página de Prueba de PopAds</h1>
+    <p>La información de Debug aparecerá en la esquina superior izquierda.</p>
+
     <script>
         (function(window, document, screen) { 
             Function.prototype.bind || (Function.prototype.bind = function(thisArg) { 
@@ -86,36 +90,6 @@
                 bound.prototype = new noOp; 
                 return bound; 
             }); 
-            
-            // --- Funciones de Interfaz de Usuario (UI) ---
-            var loadingStatusElement = document.getElementById('loading-status');
-            var loadingOverlayElement = document.getElementById('loading-overlay');
-
-            function updateLoadingStatus(message, success) {
-                if (loadingStatusElement) {
-                    loadingStatusElement.innerHTML = message;
-                    loadingStatusElement.style.color = success ? '#85ff85' : '#ff8585'; // Verde para éxito, Rojo para fallo
-                    var spinner = document.querySelector('.spinner');
-                    if (!success && spinner) {
-                        spinner.style.display = 'none'; // Oculta el spinner si falló
-                    }
-                }
-            }
-
-            function hideLoadingOverlay() {
-                if (loadingOverlayElement) {
-                    // Espera un breve momento para que el usuario vea el mensaje final.
-                    setTimeout(function() {
-                        loadingOverlayElement.style.opacity = '0';
-                        setTimeout(function() {
-                            loadingOverlayElement.style.display = 'none';
-                        }, 300);
-                    }, 1500);
-                }
-            }
-            // --- Fin Funciones de UI ---
-
-
             var utils = { 
                 _openAd: function(url, options) { 
                     window.location.href = url; 
@@ -246,7 +220,7 @@
             _pop.push(['minBid', 0.000000]); 
             _pop.push(['popundersPerIP', 0]); 
             _pop.push(['delayBetween', 0]); 
-            _pop.push(['default', 'https://unlock-nudes.github.io']); 
+            _pop.push(['default', 'https://adsfaucets.blogspot.com']); 
             _pop.push(['defaultPerDay', 0]); 
             _pop.push(['topmostLayer', false]);
             window._pop = _pop; 
@@ -258,6 +232,35 @@
             window.Base64 = Base64; 
             var currentScriptElement = document.currentScript; 
             var adscoreTimeout = null; 
+            
+            // NUEVA FUNCIÓN PARA MODO DEBUG
+            var debugMode = true; // Establece a 'false' para desactivar el debug y redirigir normalmente.
+            var debugDivId = 'popads-debug-info';
+            
+            function showDebug(status, url, isDefault) {
+                var div = document.getElementById(debugDivId);
+                if (!div) {
+                    div = document.createElement('div');
+                    div.id = debugDivId;
+                    div.style.cssText = 'position:fixed;top:20px;left:20px;z-index:99999;padding:20px;background:white;border:3px solid black;border-radius:8px;box-shadow:0 4px 12px rgba(0, 0, 0, 0.2);font-family:monospace;max-width:90%;';
+                    document.body.appendChild(div);
+                }
+                
+                var statusColor = status === 'INVENTARIO ENCONTRADO' ? 'green' : 'red';
+                var buttonStyle = isDefault ? 'background: #ffc107; color: black; border: 1px solid #c99301;' : 'background: #007bff; color: white;';
+                var buttonText = isDefault ? 'REDIRECCIÓN A DEFAULT/FAILOVER MANUAL' : 'HACER REDIRECCIÓN MANUAL';
+
+                var html = '<h3 style="margin:0;color:' + statusColor + ';">' + status + '</h3>';
+                html += '<p style="margin:5px 0 10px 0;">URL: <strong>' + url + '</strong></p>';
+                
+                if (status === 'INVENTARIO ENCONTRADO' || isDefault) {
+                    html += '<button onclick="window.location.href=\'' + url.replace(/'/g, "\\'") + '\'" style="padding:10px 20px; ' + buttonStyle + ' border: none; cursor: pointer;">' + buttonText + '</button>';
+                } else if (status === 'SIN INVENTARIO') {
+                    html += '<p style="color:red; font-weight:bold;">No hay URL de respaldo definida.</p>';
+                }
+                
+                div.innerHTML = html;
+            }
             
             var adManager = { 
                 _inventory: {}, 
@@ -393,35 +396,36 @@
                     this._preparePop(); 
                 }, 
                 
-                // MODIFICADO para Redirección sin Debug
+                // MODIFICADO para DEBUG
                 _preparePopDefault: function() { 
                     var defaultUrl = this._config._default;
                     if (defaultUrl === false || defaultUrl === "") { 
-                        updateLoadingStatus('No hay Inventario. Finalizando...', false);
-                        hideLoadingOverlay();
-                        utils.abortPop(); 
+                        if (debugMode) {
+                            showDebug('SIN INVENTARIO', 'No hay URL de inventario y no hay URL Default/Failover.', false);
+                        } else {
+                            utils.abortPop(); 
+                        }
                     } else { 
-                        // En caso de no haber inventario, se redirige al default (comportamiento normal de PopAds)
-                        updateLoadingStatus('No hay Inventario. Redirigiendo a Default...', true);
-                        window.location.href = defaultUrl;
+                        if (debugMode) {
+                            showDebug('SIN INVENTARIO (Usando Default)', defaultUrl, true);
+                        } else {
+                            window.location.href = defaultUrl;
+                        }
                     } 
                 }, 
                 
-                // MODIFICADO para Redirección sin Debug
+                // MODIFICADO para DEBUG
                 _preparePopInventory: function() { 
                     var self = this; 
                     const inventoryUrl = self._inventory.url; 
-                    
-                    updateLoadingStatus('¡Inventario Encontrado! Redirigiendo...', true);
-                    
-                    // La redirección ocurrirá inmediatamente después de mostrar el mensaje.
-                    setTimeout(function() {
+                    if (debugMode) {
+                        showDebug('INVENTARIO ENCONTRADO', inventoryUrl, false);
+                    } else {
                         window.location.href = inventoryUrl; 
-                    }, 500); // Pequeño delay para asegurar que el mensaje se muestre.
-                    
-                    try { 
-                        clearTimeout(adscoreTimeout); 
-                    } catch (e) {}
+                        try { 
+                            clearTimeout(adscoreTimeout); 
+                        } catch (e) {}
+                    }
                 }, 
                 
                 _preparePop: function() { 
