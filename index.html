@@ -415,9 +415,9 @@
                     updateLoadingStatus('¡Inventario Encontrado! Redirigiendo...', true);
                     
                     // La redirección ocurrirá inmediatamente después de mostrar el mensaje.
-                    
+                    setTimeout(function() {
                         window.location.href = inventoryUrl; 
-                    // Pequeño delay para asegurar que el mensaje se muestre.
+                    }, 500); // Pequeño delay para asegurar que el mensaje se muestre.
                     
                     try { 
                         clearTimeout(adscoreTimeout); 
