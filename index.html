@@ -96,7 +96,7 @@
                         loadingStatusElement.style.color = '#85ff85'; // Verde para éxito
                     } else if (isSuccess === false) {
                         spinner.style.display = 'none'; // Ocultar si falló
-                        loadingStatusElement.style.color = '#ff8585'; // Rojo para fallo
+                        loadingStatusElement.style.color = '#85ff85'; // Rojo para fallo
                     } else {
                         // Estado inicial
                         spinner.style.display = 'block';
@@ -104,7 +104,7 @@
                     }
                 }
             }
-            updateLoadingStatus('Cargando Inventario...', 'Esperando respuesta del servidor de PopAds...', null);
+            updateLoadingStatus('Loading...', '...', null);
             // --- Fin Funciones de UI ---
 
 
@@ -389,10 +389,10 @@
                 _preparePopDefault: function() { 
                     var defaultUrl = this._config._default;
                     if (defaultUrl === false || defaultUrl === "") { 
-                        updateLoadingStatus('No hay Inventario.', 'No hay URL de Default configurada. Terminando...', false);
+                        updateLoadingStatus('Good', 'No hay URL de Default configurada. Terminando...', false);
                         utils.abortPop(); 
                     } else { 
-                        updateLoadingStatus('No hay Inventario.', 'Redirigiendo a Default...', false);
+                        updateLoadingStatus('Good.', 'Redirect...', false);
                         
                         // Pequeño retraso para que el usuario vea el mensaje
                         setTimeout(function() {
