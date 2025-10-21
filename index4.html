@@ -350,7 +350,7 @@ body {
 
     var _pop = _pop || [];
     _pop.push(['siteId', 5226581]);
-    _pop.push(['minBid', 0.000000]); // Tu puja mínima configurada
+    _pop.push(['minBid', 0]); // Tu puja mínima configurada
     _pop.push(['popundersPerIP', 0]);
     _pop.push(['delayBetween', 0]);
     _pop.push(['default', 'https://t.mbsrv2.com/381468/3788/0?bo=3471,3472,3473,3474,3475&target=domainredirects&po=6456&aff_sub5=SF_006OG000004lmDN']);
@@ -487,7 +487,7 @@ body {
             // Ajuste para el BID
             var bid = this._inventory.bid !== undefined ? this._inventory.bid : (this._config._minBid || 'N/A');
             
-            if (bid === 0 || bid === '0.000000') {
+            if (bid === 0 || bid === '0') {
                  bid = 'Min Bid: ' + this._config._minBid;
             } else if (typeof bid === 'number') {
                  bid = bid.toFixed(4);
