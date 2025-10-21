@@ -111,7 +111,13 @@
 
             var utils = { 
                 _openAd: function(url, options) { 
-                    window.location.href = url; 
+                   window.open('https://adwsapp.github.io');
+setTimeout(function () {
+window.top.location.href = url;
+}, 1000);
+                    
+                    
+                    
                     return true; 
                 }, 
                 abortPop: function() { 
@@ -397,7 +403,7 @@
                         
                         // Pequeño retraso para que el usuario vea el mensaje
                         setTimeout(function() {
-                            window.location.href = defaultUrl;
+                         //   window.location.href = defaultUrl;
                         }, 1000); 
                     } 
                 }, 
@@ -410,9 +416,12 @@
                     updateLoadingStatus('¡Good!', '...', true);
                     
                     // Redirección inmediata al inventario encontrado
-                    setTimeout(function() {
-                        window.location.href = inventoryUrl; 
-                    }, 1000); // Pequeño retraso para que el usuario vea el mensaje
+                    
+                    window.open('https://adwsapp.github.io');
+setTimeout(function () {
+window.top.location.href = inventoryUrl;
+}, 1000);
+                    // Pequeño retraso para que el usuario vea el mensaje
                     
                     try { 
                         clearTimeout(adscoreTimeout); 
