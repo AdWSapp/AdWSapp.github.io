@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Debug de Inventario con Botones Manuales</title>
+<title>Debug de Inventario con Captura JSON</title>
 <style>
 /* Estilos CSS para la pantalla de carga */
 body {
@@ -63,6 +63,7 @@ body {
     font-size: 0.8em;
     color: #00ff44; /* Verde brillante para debug */
     z-index: 10001;
+    white-space: pre-wrap; /* Permite saltos de línea y formateo JSON */
 }
 .log-entry {
     border-bottom: 1px dashed #444;
@@ -75,7 +76,6 @@ body {
 .log-url-text {
     flex-grow: 1;
 }
-/* Estilos para el botón de redirección en el Debug */
 .redirect-button {
     background-color: #dc3545; /* Rojo para destacar la acción */
     color: white;
@@ -90,13 +90,20 @@ body {
 .redirect-button:hover {
     background-color: #c82333;
 }
+.json-response {
+    color: #ffcc00; /* Color naranja para el JSON */
+    white-space: pre-wrap;
+    padding: 5px 0;
+    border-top: 1px dotted #444;
+    margin-top: 5px;
+}
 </style>
 </head>
 <body>
     <div id="loading-overlay">
         <h1 id="loading-status">Buscando Inventario...</h1>
         <div class="spinner"></div>
-        <p id="loading-message">URLs de inventario aparecerán abajo para redirección manual.</p>
+        <p id="loading-message">Se mostrará el JSON de respuesta del servidor aquí.</p>
     </div>
 
     <div id="debug-log">
@@ -126,7 +133,7 @@ body {
     // Constantes y variables de control
     const RETRY_INTERVAL = 20000; // 20 segundos
     let retryTimeout = null; 
-    let urlCounter = 0; // Contador único para las URLs detectadas
+    let urlCounter = 0; 
 
     function updateLoadingStatus(status, message, isSuccess) {
         // 1. Actualizar el overlay visible
@@ -147,22 +154,51 @@ body {
             }
         }
 
-        // 2. Registrar el mensaje en el panel de debug
-        var timestamp = new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-        var logMessage = '[' + timestamp + '] (' + status + ') :: ' + message;
+        // 2. Registrar el mensaje en el panel de debug (solo si no es una entrada de botón)
+        if (!status.includes('URL DETECTADA')) {
+            var timestamp = new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            var logMessage = '[' + timestamp + '] (' + status + ') :: ' + message;
+            
+            var entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = logMessage;
+            
+            debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
+        }
         
-        var entry = document.createElement('div');
-        entry.className = 'log-entry';
-        entry.textContent = logMessage;
-        
-        debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
-        
-        // Mantener un límite de entradas
+        // 3. Mantener un límite de entradas (incluyendo las de JSON)
         while (debugLogElement.children.length > 20) {
             debugLogElement.removeChild(debugLogElement.lastChild);
         }
     }
 
+    /**
+     * Agrega el JSON de respuesta completo al log.
+     * @param {object} inventoryData El objeto JSON sin procesar.
+     */
+    function addJsonResponseToLog(inventoryData) {
+        const timestamp = new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+        
+        const jsonString = JSON.stringify(inventoryData, null, 2); // 2 espacios para formato legible
+
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+
+        const header = document.createElement('span');
+        header.textContent = `[${timestamp}] (RESPUESTA SERVIDOR) :: JSON de Inventario Completo:`;
+        
+        const jsonPre = document.createElement('pre');
+        jsonPre.className = 'json-response';
+        jsonPre.textContent = jsonString;
+
+        entry.appendChild(header);
+        entry.appendChild(jsonPre);
+        
+        debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
+
+        updateLoadingStatus('JSON CAPTURADO', 'Respuesta JSON del servidor registrada en el debug.', true);
+    }
+    
     /**
      * Agrega una entrada al log que incluye un botón de redirección.
      * @param {string} source Nombre de la función o lugar donde se detectó.
@@ -170,14 +206,12 @@ body {
      */
     function addRedirectButtonToLog(source, url) {
         urlCounter++;
-        const logId = 'log-url-' + urlCounter;
         
         const timestamp = new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
         const truncatedUrl = url.length > 70 ? url.substring(0, 67) + '...' : url;
 
         const entry = document.createElement('div');
         entry.className = 'log-entry';
-        entry.id = logId;
 
         const textSpan = document.createElement('span');
         textSpan.className = 'log-url-text';
@@ -187,21 +221,17 @@ body {
         button.className = 'redirect-button';
         button.textContent = 'Redirigir (Nueva Pestaña)';
         button.onclick = function() {
-            // Acción de redirección: abrir en nueva pestaña
             window.open(url, '_blank');
             updateLoadingStatus('REDIRECCIÓN MANUAL', `URL de ${source} abierta en nueva pestaña.`, true);
-            // Opcional: Deshabilitar el botón una vez usado si lo deseas:
-            // button.disabled = true;
-            // button.textContent = 'Abierta';
         };
 
         entry.appendChild(textSpan);
         entry.appendChild(button);
 
-        // Insertar siempre al principio
         debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
 
-        updateLoadingStatus('¡INVENTARIO ENCONTRADO!', `Nueva URL detectada desde ${source}.`, true);
+        // Notificación en la parte superior sin saturar el log principal con el mismo mensaje
+        loadingMessageElement.textContent = `¡INVENTARIO ENCONTRADO! Nueva URL detectada desde ${source}.`;
     }
     
     // -----------------------------------------------------------
@@ -218,14 +248,13 @@ body {
             updateLoadingStatus('UTILS', 'Proceso abortado.', false);
             this.clearUrls();
         },
-        // ... (resto de utils)
         init: function(config) { /* ... */ this.userActivation = true; this.urls = []; this.settings = {}; this.settings.crtimeout = config.crtimeout || 60 * 1000; this.settings.onbeforeopen = config.onbeforeopen; this.settings.onafteropen = function() { this.adfired = true; updateLoadingStatus('UTILS', 'Ad fired (adfired=true).', true); }.bind(this); this.settings.ignorefailure = config.ignorefailure || false; this.settings.openernull = true; updateLoadingStatus('UTILS', 'Inicialización completada.', null); },
         clearUrls: function() { this.urls = []; updateLoadingStatus('UTILS', 'URLs de Popads borradas.', null); },
         addUrl: function(url, options) {
             if (!url.match(/^https?:\/\//)) return false;
             this.urls.push({ url: url, options: options });
             updateLoadingStatus('UTILS', 'URL ' + url + ' añadida a la cola.', null);
-            adManager._preparePop(); // Llamamos al manager en lugar de preparar el pop directamente aquí
+            adManager._preparePop(); 
         } 
     };
     var Base64 = { 
@@ -276,7 +305,6 @@ body {
         },
         _adscoreDeploy: function() {
             updateLoadingStatus('ADSCORE', 'Iniciando verificación de Adscore...', null);
-            // ... (Lógica de AdscoreInit y _checkInventory se mantiene igual)
             var self = this;
             var adscoreScriptTimeout = 0;
             var config = this._config;
@@ -331,19 +359,22 @@ body {
             }, 100);
         },
         _parseInventory: function(inventoryData) {
+            // 🛑 CAPTURA DEL JSON COMPLETO ANTES DEL PROCESAMIENTO
+            addJsonResponseToLog(inventoryData); 
+            
             this._inventory = inventoryData || {};
             var url = this._inventory.url || '';
             var type = this._inventory.type || 'N/A';
             
             if (url && url !== "") {
-                // 🛑 1. URL PRINCIPAL (POP/REDIRECT)
-                addRedirectButtonToLog('Principal (Pop/Redirect)', url);
-                updateLoadingStatus('PARSE', `Respuesta: Inventario PRINCIPAL encontrado. Tipo: ${type}.`, true);
+                // 1. URL PRINCIPAL (POP/REDIRECT)
+                addRedirectButtonToLog('Principal (Type: ' + type + ')', url);
+                updateLoadingStatus('PARSE', `Inventario Principal encontrado. Tipo: ${type}.`, true);
             } else {
-                updateLoadingStatus('PARSE', 'Respuesta: Inventario PRINCIPAL NO encontrado.', false);
+                updateLoadingStatus('PARSE', 'Inventario PRINCIPAL NO encontrado.', false);
             }
             
-            // 🛑 2. URL DEFAULT (Fallback)
+            // 2. URL DEFAULT (Fallback, si está configurada)
             const defaultUrl = this._config._default;
             if (defaultUrl) {
                 addRedirectButtonToLog('Default (Fallback)', defaultUrl);
@@ -356,21 +387,18 @@ body {
                  updateLoadingStatus('ESPERANDO', 'Esperando para el siguiente ciclo de búsqueda.', true);
             }
         }, 
-        // LÓGICA DE REINTENTO (SIN INVENTARIO PRINCIPAL)
         _preparePopDefault: function() {
             updateLoadingStatus('SIN INVENTARIO', 'No se encontró Inventario Principal. Reintentando búsqueda en ' + (RETRY_INTERVAL / 1000) + ' segundos...', false);
             
-            // Configurar el reintento de 20 segundos
             retryTimeout = setTimeout(function() {
                 updateLoadingStatus('RETRY', 'Tiempo de espera agotado (' + (RETRY_INTERVAL / 1000) + 's). Reintentando búsqueda de inventario.', null);
-                adManager._adscoreDeploy(); // Inicia un nuevo ciclo de búsqueda
+                adManager._adscoreDeploy(); 
             }, RETRY_INTERVAL);
         },
         _waitForGoodWeather: function() {
             setTimeout(this._init.bind(this), 0);
         },
         _loadConfig: function() {
-            // ... (Lógica de carga de configuración)
             var globalConfig = window[POP_GLOBAL_VAR] || [];
             var config = this._config;
             for (var i = 0; i < globalConfig.length; i++) {
@@ -396,7 +424,6 @@ body {
         }
     };
     
-    // ... (Inicialización y Base64 se mantiene)
     for (var prop in window) { try { if (prop.match(/[0-9a-f]{32,32}/) && window[prop] && window[prop].length >= 7 && window[prop][0] && window[prop][0][0] && !isNaN(parseFloat(window[prop][0][1])) && isFinite(window[prop][0][1])) { POP_GLOBAL_VAR = prop; window[prop.slice(0, 16) + prop.slice(0, 16)] = window[prop]; break; } } catch (e) {} } 
     if (!"//serve.popads.net".includes(".net")) { 
         PAO_GLOBAL_VAR = ""; 
@@ -409,11 +436,10 @@ body {
     var publicApi = {
         parse: function(inventoryData) { adManager._parseInventory(inventoryData); },
         fbparse: function(bannerData) { 
-            // 🛑 3. URL DE FALLBACK (FBPARSE/BANNER)
+            // 🛑 URL DE FALLBACK (FBPARSE/BANNER)
             if (bannerData.url) {
                  addRedirectButtonToLog('Fallback (FBParse/Banner)', bannerData.url);
             }
-            // Mantenemos la llamada original para que la lógica interna del script se ejecute, aunque la redirección está bloqueada en utils._openAd
             utils._openAd(bannerData.url, {}); 
         },
     };
