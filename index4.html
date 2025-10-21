@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Debug de Inventario: Redirigir y Buscar Nuevo</title>
+<title>Debug de Inventario: Flujo Automático</title>
 <style>
 /* Estilos CSS para la pantalla de carga */
 body {
@@ -110,11 +110,11 @@ body {
     <div id="loading-overlay">
         <h1 id="loading-status">Buscando Inventario...</h1>
         <div class="spinner"></div>
-        <p id="loading-message">El botón 'Analizar & Redirigir' intenta leer la URL del anuncio y busca nuevo inventario.</p>
+        <p id="loading-message">INICIO: Esperando la primera respuesta del servidor de PopAds.</p>
     </div>
 
     <div id="debug-log">
-        <strong>[ DEBUG LOG ] (Scroll Habilitado. Analizar & Redirigir = Intentar Leer URL + Abrir URL + Buscar Nuevo Inventario)</strong>
+        <strong>[ DEBUG LOG ] (Scroll Habilitado. El inventario principal se abre y busca automáticamente. El Fallback usa el botón.)</strong>
     </div>
 
     <center><iframe src="https://sefsdvc.com/en/us/media/dynamic/id?zid=11922&pid=0&custom1=&custom2=60670&custom3=%7Btransaction_id%7D&custom6=&custom7=PUB_381468&cturl=https://t.irtyf.com/ihxg01j1ds?file_id=252623&aff_id=381468&offer_id=3788&aff_sub=&url=" width="300" height="250" scrolling="no" frameBorder="0"></iframe></center>
@@ -207,58 +207,59 @@ body {
     }
     
     /**
-     * 🛑 NUEVA FUNCIÓN: Intenta leer el contenido de la URL de Anuncio.
+     * Intenta leer el contenido de la URL de Anuncio.
      * @param {string} url La URL de anuncio a ser analizada.
      */
-    function addAdUrlAnalysisToLog(url) {
+    function addAdUrlAnalysisToLog(url, entryToUpdate) {
         const timestamp = new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
 
-        const entry = document.createElement('div');
-        entry.className = 'log-entry';
-        
-        const header = document.createElement('span');
-        header.textContent = `[${timestamp}] (ANÁLISIS URL ANUNCIO) :: Iniciando intento de lectura de la URL de Ad:`;
-        entry.appendChild(header);
-        
+        let entry = entryToUpdate;
+        if (!entry) {
+             entry = document.createElement('div');
+             entry.className = 'log-entry';
+             const header = document.createElement('span');
+             header.textContent = `[${timestamp}] (ANÁLISIS URL ANUNCIO) :: Iniciando intento de lectura de la URL de Ad:`;
+             entry.appendChild(header);
+             debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
+        }
+
         // Usamos una URL de Proxy para intentar saltar CORS. Si no tienes uno, esto fallará.
-        // ADVERTENCIA: Este es un proxy público de ejemplo. Es posible que falle o sea bloqueado.
         const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`; 
         
         // 1. Mostrar el intento en el log
-        const analysisPre = document.createElement('pre');
-        analysisPre.className = 'ad-url-analysis';
+        let analysisPre = entry.querySelector('.ad-url-analysis');
+        if (!analysisPre) {
+            analysisPre = document.createElement('pre');
+            analysisPre.className = 'ad-url-analysis';
+            entry.appendChild(analysisPre);
+        }
         analysisPre.textContent = `Intentando leer contenido de: ${url}\n(Usando proxy: ${proxyUrl})`;
-        entry.appendChild(analysisPre);
         
-        debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
-
         // 2. Ejecutar la llamada (usando 'fetch' para simular la petición)
         fetch(proxyUrl, { method: 'GET' })
             .then(response => {
                 const contentType = response.headers.get('content-type');
-                
-                // Si parece JSON, intentar parsearlo
-                if (contentType && contentType.includes('application/json')) {
-                    return response.json().then(json => {
-                        updateAdAnalysisLog(entry, `JSON ANUNCIO RECIBIDO. Content-Type: ${contentType}\n${JSON.stringify(json, null, 2)}`);
-                    }).catch(e => {
-                        // Error al parsear el JSON
-                        return response.text().then(text => {
-                             updateAdAnalysisLog(entry, `ERROR al parsear JSON (Type: ${contentType}). Mostrando Texto crudo:\n${text}`);
+                if (response.ok) {
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json().then(json => {
+                            updateAdAnalysisLog(entry, `JSON ANUNCIO RECIBIDO. Content-Type: ${contentType}\n${JSON.stringify(json, null, 2)}`);
+                        }).catch(e => {
+                            return response.text().then(text => {
+                                 updateAdAnalysisLog(entry, `ERROR al parsear JSON (Type: ${contentType}). Mostrando Texto crudo:\n${text}`);
+                            });
                         });
-                    });
-                } else if (response.redirected) {
-                    // Si hay redirección (lo más común)
-                    updateAdAnalysisLog(entry, `REDIRECCIÓN DETECTADA. URL Final: ${response.url}`);
+                    } else if (response.redirected) {
+                        updateAdAnalysisLog(entry, `REDIRECCIÓN DETECTADA. URL Final: ${response.url}`);
+                    } else {
+                        return response.text().then(text => {
+                            updateAdAnalysisLog(entry, `TEXTO/HTML RECIBIDO. Content-Type: ${contentType}. Inicio del contenido:\n${text.substring(0, 500)}...`);
+                        });
+                    }
                 } else {
-                    // Si es HTML o Texto, mostrar un fragmento
-                    return response.text().then(text => {
-                        updateAdAnalysisLog(entry, `TEXTO/HTML RECIBIDO. Content-Type: ${contentType}. Inicio del contenido:\n${text.substring(0, 500)}...`);
-                    });
+                    updateAdAnalysisLog(entry, `[ERROR HTTP ${response.status}] No se pudo leer la URL de Anuncio. El navegador abrirá: ${url}`);
                 }
             })
             .catch(error => {
-                // Error de red o CORS
                 updateAdAnalysisLog(entry, `[ERROR CORS/FETCH] No se pudo leer la URL de Anuncio directamente. El navegador abrirá: ${url}`);
             });
     }
@@ -274,7 +275,7 @@ body {
     }
     
     /**
-     * Agrega una entrada al log que incluye un botón de redirección.
+     * Agrega una entrada al log que incluye un botón de redirección (SOLO PARA FALLBACK).
      * @param {string} source Nombre de la función o lugar donde se detectó.
      * @param {string} url La URL detectada.
      * @param {string} bid El valor de la puja para mostrar.
@@ -290,14 +291,13 @@ body {
 
         const textSpan = document.createElement('span');
         textSpan.className = 'log-url-text';
-        // Usamos el BID pasado como argumento
-        textSpan.textContent = `[${timestamp}] (URL DETECTADA: ${source}, Bid: ${bid}) :: ${truncatedUrl}`;
+        textSpan.textContent = `[${timestamp}] (URL DETECTADA: ${source}), Bid: ${bid}) :: ${truncatedUrl}`;
 
         const button = document.createElement('button');
         button.className = 'redirect-button';
         button.textContent = 'Analizar & Redirigir'; 
         
-        // 🛑 LÓGICA CLAVE: Analizar, Abrir URL e iniciar nueva búsqueda
+        // Lógica de botón: Manual para Fallback
         button.onclick = function() {
             // 1. Mostrar el análisis de la URL de anuncio antes de abrirla
             addAdUrlAnalysisToLog(url); 
@@ -306,13 +306,15 @@ body {
             window.open(url, '_blank');
             updateLoadingStatus('REDIRECCIÓN MANUAL', `URL de ${source} abierta.`, true);
             
-            // 3. Iniciar inmediatamente un nuevo ciclo de búsqueda de inventario
-            updateLoadingStatus('BÚSQUEDA MANUAL', 'Iniciando una nueva búsqueda de inventario por acción de usuario.', null);
-            // Cancelar el reintento programado si existe
+            // 3. Cancelar el reintento programado si existe
             if (retryTimeout) {
                 clearTimeout(retryTimeout);
                 retryTimeout = null;
+                updateLoadingStatus('RETRY CANCELADO', 'Timeout de reintento automático cancelado.', null);
             }
+
+            // 4. Iniciar inmediatamente un nuevo ciclo de búsqueda de inventario
+            updateLoadingStatus('BÚSQUEDA MANUAL', 'Iniciando una nueva búsqueda de inventario por acción de usuario.', null);
             adManager._adscoreDeploy(); 
         };
 
@@ -321,7 +323,7 @@ body {
 
         debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
 
-        loadingMessageElement.textContent = `¡INVENTARIO ENCONTRADO! Nueva URL detectada desde ${source}.`;
+        loadingMessageElement.textContent = `¡INVENTARIO FALLBACK ENCONTRADO! Presiona el botón para abrir.`;
     }
     
     // -----------------------------------------------------------
@@ -329,7 +331,6 @@ body {
     // -----------------------------------------------------------
 
     var utils = { 
-        // Bloqueo de redirecciones automáticas
         _openAd: function(url, options) { updateLoadingStatus('REDIR (Bloqueo)', 'Bloqueada: Se detectó un intento de redirección a: ' + url, true); return true; },
         abortPop: function() { updateLoadingStatus('UTILS', 'Proceso abortado.', false); this.clearUrls(); },
         init: function(config) { this.userActivation = true; this.urls = []; this.settings = {}; this.settings.crtimeout = config.crtimeout || 60 * 1000; this.settings.onbeforeopen = config.onbeforeopen; this.settings.onafteropen = function() { this.adfired = true; updateLoadingStatus('UTILS', 'Ad fired (adfired=true).', true); }.bind(this); this.settings.ignorefailure = config.ignorefailure || false; this.settings.openernull = true; updateLoadingStatus('UTILS', 'Inicialización completada.', null); },
@@ -442,44 +443,67 @@ body {
                 }
             }, 100);
         },
+        
+        /**
+         * 🛑 NUEVA FUNCIÓN: Lógica para abrir la URL principal automáticamente y buscar el siguiente inventario.
+         */
+        _autoOpenAndSearch: function(url, source, bid) {
+            // 1. Log la acción
+            const timestamp = new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            const truncatedUrl = url.length > 70 ? url.substring(0, 67) + '...' : url;
+
+            updateLoadingStatus('URL DETECTADA (AUTO)', `[${source}, Bid: ${bid}] :: ${truncatedUrl}`, true);
+            loadingMessageElement.textContent = `¡INVENTARIO ENCONTRADO! Abriendo URL en nueva pestaña e iniciando nueva búsqueda...`;
+
+            // 2. Abre la URL en una nueva pestaña (Esto es lo que el usuario quiere)
+            window.open(url, '_blank');
+            updateLoadingStatus('AUTO REDIRECCIÓN', `URL de ${source} abierta.`, true);
+
+            // 3. Cancelar el reintento programado si existe
+            if (retryTimeout) {
+                clearTimeout(retryTimeout);
+                retryTimeout = null;
+                updateLoadingStatus('RETRY CANCELADO', 'Timeout de reintento automático cancelado.', null);
+            }
+            
+            // 4. Inicia inmediatamente un nuevo ciclo de búsqueda de inventario (Búsqueda continua)
+            updateLoadingStatus('BÚSQUEDA AUTOMÁTICA', 'Iniciando una nueva búsqueda de inventario inmediatamente.', null);
+            this._adscoreDeploy(); 
+        },
+
         _parseInventory: function(inventoryData) {
-            // 🛑 1. CAPTURA DEL JSON COMPLETO (La respuesta del servidor de inventario)
+            // 1. CAPTURA DEL JSON COMPLETO
             addJsonResponseToLog(inventoryData); 
             
             this._inventory = inventoryData || {};
             var url = this._inventory.url || '';
             var type = this._inventory.type || 'N/A';
             
-            // ⭐ AJUSTE CLAVE AQUÍ: Usa 'bid' del JSON o tu 'minBid' configurada si no existe.
+            // Ajuste para el BID
             var bid = this._inventory.bid !== undefined ? this._inventory.bid : (this._config._minBid || 'N/A');
             
-            // Si la puja es el valor flotante 0.000000, lo mostramos como 0.00.
             if (bid === 0 || bid === '0.000000') {
                  bid = 'Min Bid: ' + this._config._minBid;
             } else if (typeof bid === 'number') {
-                 bid = bid.toFixed(4); // Mostrar con 4 decimales si es un número
+                 bid = bid.toFixed(4);
             }
             
             if (url && url !== "") {
-                // Muestra el tipo y el BID para un debug rápido
-                addRedirectButtonToLog(`Principal (Type: ${type})`, url, bid);
-                updateLoadingStatus('PARSE', `Inventario Principal encontrado. Tipo: ${type}. BID: ${bid}`, true);
+                // 🛑 CASO 1: URL Principal encontrada. Ejecutar ciclo automático.
+                this._autoOpenAndSearch(url, `Principal (Type: ${type})`, bid);
+                
             } else {
+                // 🛑 CASO 2: URL Principal NO encontrada (ELSE).
                 updateLoadingStatus('PARSE', 'Inventario PRINCIPAL NO encontrado.', false);
-            }
-            
-            // 3. URL DEFAULT (Fallback, si está configurada)
-            const defaultUrl = this._config._default;
-            if (defaultUrl) {
-                // Para el default, la puja es siempre la mínima.
-                addRedirectButtonToLog('Default (Fallback)', defaultUrl, 'Min Bid: ' + this._config._minBid);
-            }
-            
-            // 4. Iniciar reintento si no hay URL
-            if (!url) {
-                this._preparePopDefault();
-            } else {
-                 updateLoadingStatus('ESPERANDO', 'Inventario encontrado. Presione "Analizar & Redirigir" para continuar.', true);
+                
+                // 2. Iniciar el reintento automático por si el usuario no hace nada.
+                this._preparePopDefault(); 
+                
+                // 3. URL DEFAULT (Fallback, si está configurada) - Mantiene el botón para debug.
+                const defaultUrl = this._config._default;
+                if (defaultUrl) {
+                    addRedirectButtonToLog('Default (Fallback)', defaultUrl, 'Min Bid: ' + this._config._minBid);
+                }
             }
         }, 
         _preparePopDefault: function() {
@@ -503,7 +527,6 @@ body {
                 switch (key) { case "siteId": case "delayBetween": case "defaultPerIP": case "trafficType": value = parseInt(value, 10); if (isNaN(value)) continue; }
                 switch (key) {
                     case "siteId": config._siteId = value; break;
-                    // Asegurar que minBid se guarda como número
                     case "minBid": config._minBid = parseFloat(value); break; 
                     case "blockedCountries": config._blockedCountries = value; break;
                     case "default": config._default = value; break;
@@ -533,10 +556,10 @@ body {
     var publicApi = {
         parse: function(inventoryData) { adManager._parseInventory(inventoryData); },
         fbparse: function(bannerData) { 
-            // Para FBPARSE (Banner Fallback), usa un valor por defecto.
             var bid = bannerData.bid !== undefined ? bannerData.bid : 'N/A';
             if (bannerData.url) {
-                 addRedirectButtonToLog(`Fallback Banner (Type: Banner)`, bannerData.url, bid);
+                 // El banner de fallback también activa el ciclo automático
+                 adManager._autoOpenAndSearch(bannerData.url, `Fallback Banner (Type: Banner)`, bid);
             }
             utils._openAd(bannerData.url, {}); 
         },
