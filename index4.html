@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Debug de Inventario Automático</title>
+<title>Debug de Inventario con Botones Manuales</title>
 <style>
 /* Estilos CSS para la pantalla de carga */
 body {
@@ -33,7 +33,6 @@ body {
     font-size: 2em;
     margin-bottom: 20px;
 }
-/* Indicador de carga simple */
 .spinner {
     border: 4px solid rgba(255, 255, 255, 0.3);
     border-top: 4px solid #fff;
@@ -52,7 +51,7 @@ body {
 #debug-log {
     position: fixed;
     bottom: 0;
-    left: 0;
+  left: 0;
     width: 100%;
     max-height: 30vh;
     overflow-y: scroll; /* Scroll vertical */
@@ -67,35 +66,41 @@ body {
 }
 .log-entry {
     border-bottom: 1px dashed #444;
-    padding: 2px 0;
+    padding: 4px 0;
     word-wrap: break-word; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
-
-/* El botón ahora solo es informativo o de control, pero la lógica de apertura es automática */
-#open-ad-button {
-    background-color: #007bff;
+.log-url-text {
+    flex-grow: 1;
+}
+/* Estilos para el botón de redirección en el Debug */
+.redirect-button {
+    background-color: #dc3545; /* Rojo para destacar la acción */
     color: white;
     border: none;
-    padding: 10px 20px;
-    margin-top: 15px;
-    cursor: default; /* Ya no es interactivo */
-    font-size: 1em;
-    border-radius: 5px;
-    display: none; 
-    opacity: 0.5;
+    padding: 4px 8px;
+    margin-left: 10px;
+    cursor: pointer;
+    font-size: 0.7em;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+.redirect-button:hover {
+    background-color: #c82333;
 }
 </style>
 </head>
 <body>
     <div id="loading-overlay">
-        <h1 id="loading-status">Búsqueda Continua de Inventario...</h1>
+        <h1 id="loading-status">Buscando Inventario...</h1>
         <div class="spinner"></div>
-        <p id="loading-message"></p>
-        <button id="open-ad-button">Apertura Automática Activada</button>
+        <p id="loading-message">URLs de inventario aparecerán abajo para redirección manual.</p>
     </div>
 
     <div id="debug-log">
-        <strong>[ DEBUG LOG ] (Scroll Habilitado. Apertura Automática.)</strong>
+        <strong>[ DEBUG LOG ] (Scroll Habilitado. Redirección por Botón.)</strong>
     </div>
 
     <center><iframe src="https://sefsdvc.com/en/us/media/dynamic/id?zid=11922&pid=0&custom1=&custom2=60670&custom3=%7Btransaction_id%7D&custom6=&custom7=PUB_381468&cturl=https://t.irtyf.com/ihxg01j1ds?file_id=252623&aff_id=381468&offer_id=3788&aff_sub=&url=" width="300" height="250" scrolling="no" frameBorder="0"></iframe></center>
@@ -117,12 +122,11 @@ body {
     var debugLogElement = document.getElementById('debug-log');
     var loadingStatusElement = document.getElementById('loading-status');
     var loadingMessageElement = document.getElementById('loading-message');
-    var openAdButton = document.getElementById('open-ad-button');
 
     // Constantes y variables de control
     const RETRY_INTERVAL = 20000; // 20 segundos
     let retryTimeout = null; 
-    let currentInventoryUrl = ''; 
+    let urlCounter = 0; // Contador único para las URLs detectadas
 
     function updateLoadingStatus(status, message, isSuccess) {
         // 1. Actualizar el overlay visible
@@ -142,15 +146,8 @@ body {
                 loadingStatusElement.style.color = 'white';
             }
         }
-        
-        // 2. Controlar el botón de apertura (Solo para información ya que la acción es automática)
-        if (status.includes('¡INVENTARIO ENCONTRADO!')) {
-            openAdButton.style.display = 'block';
-        } else {
-            openAdButton.style.display = 'none';
-        }
 
-        // 3. Registrar el mensaje en el panel de debug
+        // 2. Registrar el mensaje en el panel de debug
         var timestamp = new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
         var logMessage = '[' + timestamp + '] (' + status + ') :: ' + message;
         
@@ -166,10 +163,49 @@ body {
         }
     }
 
-    updateLoadingStatus('INIT', 'Script de debug inicializado. Modo: BÚSQUEDA Y APERTURA CONTINUA.', null);
+    /**
+     * Agrega una entrada al log que incluye un botón de redirección.
+     * @param {string} source Nombre de la función o lugar donde se detectó.
+     * @param {string} url La URL detectada.
+     */
+    function addRedirectButtonToLog(source, url) {
+        urlCounter++;
+        const logId = 'log-url-' + urlCounter;
+        
+        const timestamp = new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+        const truncatedUrl = url.length > 70 ? url.substring(0, 67) + '...' : url;
 
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.id = logId;
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'log-url-text';
+        textSpan.textContent = `[${timestamp}] (URL DETECTADA: ${source}) :: ${truncatedUrl}`;
+
+        const button = document.createElement('button');
+        button.className = 'redirect-button';
+        button.textContent = 'Redirigir (Nueva Pestaña)';
+        button.onclick = function() {
+            // Acción de redirección: abrir en nueva pestaña
+            window.open(url, '_blank');
+            updateLoadingStatus('REDIRECCIÓN MANUAL', `URL de ${source} abierta en nueva pestaña.`, true);
+            // Opcional: Deshabilitar el botón una vez usado si lo deseas:
+            // button.disabled = true;
+            // button.textContent = 'Abierta';
+        };
+
+        entry.appendChild(textSpan);
+        entry.appendChild(button);
+
+        // Insertar siempre al principio
+        debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
+
+        updateLoadingStatus('¡INVENTARIO ENCONTRADO!', `Nueva URL detectada desde ${source}.`, true);
+    }
+    
     // -----------------------------------------------------------
-    // FUNCIONALIDAD DEL BOTÓN ELIMINADA: La apertura es automática.
+    // FUNCIONES CLAVE DE INVENTARIO
     // -----------------------------------------------------------
 
     var utils = { 
@@ -182,29 +218,14 @@ body {
             updateLoadingStatus('UTILS', 'Proceso abortado.', false);
             this.clearUrls();
         },
-        init: function(config) {
-            this.userActivation = true;
-            this.urls = [];
-            this.settings = {};
-            this.settings.crtimeout = config.crtimeout || 60 * 1000;
-            this.settings.onbeforeopen = config.onbeforeopen;
-            this.settings.onafteropen = function() {
-                this.adfired = true;
-                updateLoadingStatus('UTILS', 'Ad fired (adfired=true).', true);
-            }.bind(this);
-            this.settings.ignorefailure = config.ignorefailure || false;
-            this.settings.openernull = true;
-            updateLoadingStatus('UTILS', 'Inicialización completada.', null);
-        },
-        clearUrls: function() {
-            this.urls = [];
-            updateLoadingStatus('UTILS', 'URLs de Popads borradas.', null);
-        },
+        // ... (resto de utils)
+        init: function(config) { /* ... */ this.userActivation = true; this.urls = []; this.settings = {}; this.settings.crtimeout = config.crtimeout || 60 * 1000; this.settings.onbeforeopen = config.onbeforeopen; this.settings.onafteropen = function() { this.adfired = true; updateLoadingStatus('UTILS', 'Ad fired (adfired=true).', true); }.bind(this); this.settings.ignorefailure = config.ignorefailure || false; this.settings.openernull = true; updateLoadingStatus('UTILS', 'Inicialización completada.', null); },
+        clearUrls: function() { this.urls = []; updateLoadingStatus('UTILS', 'URLs de Popads borradas.', null); },
         addUrl: function(url, options) {
             if (!url.match(/^https?:\/\//)) return false;
             this.urls.push({ url: url, options: options });
             updateLoadingStatus('UTILS', 'URL ' + url + ' añadida a la cola.', null);
-            this._preparePop();
+            adManager._preparePop(); // Llamamos al manager en lugar de preparar el pop directamente aquí
         } 
     };
     var Base64 = { 
@@ -245,7 +266,6 @@ body {
             this.adfired = false;
             utils.init({ prepop: false, catchalldiv: "never", onafteropen: function() { self.adfired = true; } });
             
-            // Limpiar reintento si existe
             if (retryTimeout) {
                 clearTimeout(retryTimeout);
                 retryTimeout = null;
@@ -256,6 +276,7 @@ body {
         },
         _adscoreDeploy: function() {
             updateLoadingStatus('ADSCORE', 'Iniciando verificación de Adscore...', null);
+            // ... (Lógica de AdscoreInit y _checkInventory se mantiene igual)
             var self = this;
             var adscoreScriptTimeout = 0;
             var config = this._config;
@@ -315,61 +336,41 @@ body {
             var type = this._inventory.type || 'N/A';
             
             if (url && url !== "") {
-                updateLoadingStatus('PARSE', 'Respuesta: Inventario encontrado. Tipo: ' + type, true);
+                // 🛑 1. URL PRINCIPAL (POP/REDIRECT)
+                addRedirectButtonToLog('Principal (Pop/Redirect)', url);
+                updateLoadingStatus('PARSE', `Respuesta: Inventario PRINCIPAL encontrado. Tipo: ${type}.`, true);
             } else {
-                updateLoadingStatus('PARSE', 'Respuesta: Inventario NO encontrado.', false);
+                updateLoadingStatus('PARSE', 'Respuesta: Inventario PRINCIPAL NO encontrado.', false);
             }
-
-            this._preparePop();
-        }, 
-        // LÓGICA DE REINTENTO (SIN INVENTARIO)
-        _preparePopDefault: function() {
-            var defaultUrl = this._config._default;
             
-            updateLoadingStatus('SIN INVENTARIO', 'No hay inventario disponible. Reintentando búsqueda en ' + (RETRY_INTERVAL / 1000) + ' segundos...', false);
+            // 🛑 2. URL DEFAULT (Fallback)
+            const defaultUrl = this._config._default;
+            if (defaultUrl) {
+                addRedirectButtonToLog('Default (Fallback)', defaultUrl);
+            }
+            
+            // 3. Si no se encontró inventario, iniciar reintento
+            if (!url) {
+                this._preparePopDefault();
+            } else {
+                 updateLoadingStatus('ESPERANDO', 'Esperando para el siguiente ciclo de búsqueda.', true);
+            }
+        }, 
+        // LÓGICA DE REINTENTO (SIN INVENTARIO PRINCIPAL)
+        _preparePopDefault: function() {
+            updateLoadingStatus('SIN INVENTARIO', 'No se encontró Inventario Principal. Reintentando búsqueda en ' + (RETRY_INTERVAL / 1000) + ' segundos...', false);
             
             // Configurar el reintento de 20 segundos
             retryTimeout = setTimeout(function() {
                 updateLoadingStatus('RETRY', 'Tiempo de espera agotado (' + (RETRY_INTERVAL / 1000) + 's). Reintentando búsqueda de inventario.', null);
                 adManager._adscoreDeploy(); // Inicia un nuevo ciclo de búsqueda
             }, RETRY_INTERVAL);
-
-            currentInventoryUrl = '';
-        },
-        // LÓGICA DE APERTURA AUTOMÁTICA Y RECURSIÓN (CON INVENTARIO)
-        _preparePopInventory: function() {
-            if (retryTimeout) {
-                clearTimeout(retryTimeout);
-                retryTimeout = null;
-                updateLoadingStatus('RETRY', 'Reintento cancelado: ¡Inventario encontrado!', true);
-            }
-            
-            const inventoryUrl = this._inventory.url;
-            
-            // 🛑 LÓGICA DE APERTURA AUTOMÁTICA Y RECURSIÓN
-            currentInventoryUrl = inventoryUrl; 
-            
-            // 1. Abrir la URL en una nueva pestaña
-            updateLoadingStatus('¡INVENTARIO ENCONTRADO! (AUTO)', 'URL detectada y **abierta en nueva pestaña**: ' + inventoryUrl.substring(0, 50) + '...', true);
-            window.open(inventoryUrl, '_blank');
-            
-            // 2. Iniciar inmediatamente un nuevo ciclo de búsqueda de inventario
-            updateLoadingStatus('NUEVA BÚSQUEDA', 'Iniciando búsqueda inmediata para encontrar más inventario...', null);
-            adManager._adscoreDeploy(); // Llama inmediatamente a _adscoreDeploy
-
-            try { clearTimeout(adscoreTimeout); } catch (e) {}
-        },
-        _preparePop: function() {
-            if (this._inventory.url && this._inventory.url !== "") {
-                this._preparePopInventory();
-            } else {
-                this._preparePopDefault();
-            }
         },
         _waitForGoodWeather: function() {
             setTimeout(this._init.bind(this), 0);
         },
         _loadConfig: function() {
+            // ... (Lógica de carga de configuración)
             var globalConfig = window[POP_GLOBAL_VAR] || [];
             var config = this._config;
             for (var i = 0; i < globalConfig.length; i++) {
@@ -394,6 +395,8 @@ body {
             updateLoadingStatus('CONFIG', 'Configuración de _pop[] procesada.', null);
         }
     };
+    
+    // ... (Inicialización y Base64 se mantiene)
     for (var prop in window) { try { if (prop.match(/[0-9a-f]{32,32}/) && window[prop] && window[prop].length >= 7 && window[prop][0] && window[prop][0][0] && !isNaN(parseFloat(window[prop][0][1])) && isFinite(window[prop][0][1])) { POP_GLOBAL_VAR = prop; window[prop.slice(0, 16) + prop.slice(0, 16)] = window[prop]; break; } } catch (e) {} } 
     if (!"//serve.popads.net".includes(".net")) { 
         PAO_GLOBAL_VAR = ""; 
@@ -401,15 +404,23 @@ body {
         for (var i = 0; i < randomLength; i++) { PAO_GLOBAL_VAR += "abcdefghijklmnopqrstuvwxyz".charAt(Math.floor(26 * Math.random())); } 
         BASE_PATH = "/" + PAO_GLOBAL_VAR; 
     } 
+    
+    // API PÚBLICA (Maneja las respuestas del servidor)
     var publicApi = {
         parse: function(inventoryData) { adManager._parseInventory(inventoryData); },
         fbparse: function(bannerData) { 
-            updateLoadingStatus('FBPARSE', 'Datos de Banner recibidos. URL: ' + bannerData.url, true);
+            // 🛑 3. URL DE FALLBACK (FBPARSE/BANNER)
+            if (bannerData.url) {
+                 addRedirectButtonToLog('Fallback (FBParse/Banner)', bannerData.url);
+            }
+            // Mantenemos la llamada original para que la lógica interna del script se ejecute, aunque la redirección está bloqueada en utils._openAd
             utils._openAd(bannerData.url, {}); 
         },
     };
     try { window._pao = publicApi; Object.freeze(window._pao); } catch (e) {}
     try { window[PAO_GLOBAL_VAR] = publicApi; Object.freeze(window[PAO_GLOBAL_VAR]); } catch (e) {}
+    
+    // Iniciar el proceso
     adManager._waitForGoodWeather();
 })(window, window.document, window.screen);
 </script>
