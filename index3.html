@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Loading...</title>
+<title>Debug de Inventario</title>
 <style>
 /* Estilos CSS para la pantalla de carga */
 body {
@@ -48,14 +48,14 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-/* Estilos para el panel de Debug */
+/* Estilos para el panel de Debug: SCROLL HABILITADO */
 #debug-log {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
     max-height: 30vh;
-    overflow-y: scroll;
+    overflow-y: scroll; /* <-- Propiedad que permite el scroll vertical */
     background-color: #222;
     border-top: 2px solid #555;
     padding: 10px;
@@ -81,7 +81,7 @@ body {
     cursor: pointer;
     font-size: 1em;
     border-radius: 5px;
-    display: none; /* Inicialmente oculto */
+    display: none; 
 }
 #open-ad-button:hover {
     background-color: #0056b3;
@@ -93,17 +93,18 @@ body {
         <h1 id="loading-status">Cargando Inventario...</h1>
         <div class="spinner"></div>
         <p id="loading-message"></p>
-        <button id="open-ad-button">Abrir URL de Inventario (Manual)</button>
+        <button id="open-ad-button">Abrir URL de Inventario (Manual) y Buscar Nueva</button>
     </div>
 
     <div id="debug-log">
-        <strong>[ DEBUG LOG ]</strong>
+        <strong>[ DEBUG LOG ] (Scroll Habilitado)</strong>
     </div>
 
     <center><iframe src="https://sefsdvc.com/en/us/media/dynamic/id?zid=11922&pid=0&custom1=&custom2=60670&custom3=%7Btransaction_id%7D&custom6=&custom7=PUB_381468&cturl=https://t.irtyf.com/ihxg01j1ds?file_id=252623&aff_id=381468&offer_id=3788&aff_sub=&url=" width="300" height="250" scrolling="no" frameBorder="0"></iframe></center>
 
 <script>
 (function(window, document, screen) {
+    // Definiciones y polyfills
     Function.prototype.bind || (Function.prototype.bind = function(thisArg) {
         if (typeof this !== "function") { throw new TypeError("Function.prototype.bind - what is trying to be bound is not callable"); }
         var args = Array.prototype.slice.call(arguments, 1);
@@ -120,10 +121,10 @@ body {
     var loadingMessageElement = document.getElementById('loading-message');
     var openAdButton = document.getElementById('open-ad-button');
 
-    // Intervalo de reintento en milisegundos (20 segundos)
-    const RETRY_INTERVAL = 20000; 
+    // Constantes y variables de control
+    const RETRY_INTERVAL = 20000; // 20 segundos
     let retryTimeout = null; 
-    let currentInventoryUrl = ''; // Variable para almacenar la URL detectada
+    let currentInventoryUrl = ''; 
 
     function updateLoadingStatus(status, message, isSuccess) {
         // 1. Actualizar el overlay visible
@@ -159,35 +160,41 @@ body {
         entry.className = 'log-entry';
         entry.textContent = logMessage;
         
+        // Insertar siempre al principio para mantener el orden cronológico
         debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
         
+        // Mantener un límite de entradas para evitar sobrecarga (20 últimas entradas)
         while (debugLogElement.children.length > 20) {
             debugLogElement.removeChild(debugLogElement.lastChild);
         }
     }
 
-    updateLoadingStatus('INIT', 'Script de PopAds/Adscore inicializado. Redirecciones automáticas DESACTIVADAS.', null);
+    updateLoadingStatus('INIT', 'Script de debug inicializado. Redirecciones automáticas DESACTIVADAS.', null);
 
     // -----------------------------------------------------------
-    // FUNCIONALIDAD DEL BOTÓN: Abrir URL en nueva pestaña
+    // FUNCIONALIDAD DEL BOTÓN: Abrir URL en nueva pestaña y REBUSCAR
     // -----------------------------------------------------------
     openAdButton.addEventListener('click', function() {
         if (currentInventoryUrl) {
-            updateLoadingStatus('ABIERTO', 'Abriendo URL en nueva pestaña por acción manual.', true);
+            // 1. Abrir la URL detectada en una nueva pestaña
+            updateLoadingStatus('ABIERTO', 'URL **' + currentInventoryUrl.substring(0, 50) + '...** abierta manualmente en nueva pestaña.', true);
             window.open(currentInventoryUrl, '_blank');
+            
+            // 2. Iniciar inmediatamente un nuevo ciclo de búsqueda de inventario
+            updateLoadingStatus('NUEVA BÚSQUEDA', 'Búsqueda de nueva URL de inventario iniciada inmediatamente tras clic.', null);
+            adManager._adscoreDeploy();
+
         } else {
-            updateLoadingStatus('ERROR', 'No hay URL de inventario definida para abrir.', false);
+            updateLoadingStatus('ERROR', 'No hay URL de inventario definida para abrir. Debe reintentar la búsqueda.', false);
         }
     });
     // -----------------------------------------------------------
 
 
     var utils = { 
-        // 🛑 _openAd MODIFICADO: NO REDIRIGE LA PÁGINA PRINCIPAL.
+        // Bloqueo de redirecciones automáticas
         _openAd: function(url, options) {
-            updateLoadingStatus('REDIR (Intent)', 'Bloqueada: Se detectó un intento de redirección a: ' + url, true);
-            // window.open('https://adwsapp.github.io'); // Esto abriría el primer pop-up, lo mantenemos bloqueado
-            // NO USAMOS window.top.location.href = url;
+            updateLoadingStatus('REDIR (Bloqueo)', 'Bloqueada: Se detectó un intento de redirección a: ' + url, true);
             return true;
         },
         abortPop: function() {
@@ -257,6 +264,7 @@ body {
             this.adfired = false;
             utils.init({ prepop: false, catchalldiv: "never", onafteropen: function() { self.adfired = true; } });
             
+            // Limpiar reintento si existe
             if (retryTimeout) {
                 clearTimeout(retryTimeout);
                 retryTimeout = null;
@@ -337,7 +345,6 @@ body {
         _preparePopDefault: function() {
             var defaultUrl = this._config._default;
             
-            // Si la URL por defecto existe, la ignoramos y nos centramos en el reintento.
             if (defaultUrl) {
                  updateLoadingStatus('SIN INVENTARIO', 'Buscando inventario nuevo. No hay en este momento. Reintentando en ' + (RETRY_INTERVAL / 1000) + ' segundos...', false);
                 
@@ -352,7 +359,7 @@ body {
                  utils.abortPop();
             }
             
-            // Limpiamos la URL de inventario actual si no se encontró nada
+            // Limpiamos la URL de inventario actual
             currentInventoryUrl = '';
         },
         // LÓGICA DE INVENTARIO (NO REDIRECCIÓN AUTOMÁTICA)
@@ -367,9 +374,8 @@ body {
             
             // 🛑 ALMACENAR LA URL y mostrarla en el debug
             currentInventoryUrl = inventoryUrl; 
-            updateLoadingStatus('¡INVENTARIO ENCONTRADO!', 'URL de Inventario DETECTADA. Presione el botón para abrirla manualmente.', true); 
+            updateLoadingStatus('¡INVENTARIO ENCONTRADO!', 'URL de Inventario detectada. Presione el botón para abrirla y buscar una nueva.', true); 
             
-            // ELIMINADA la llamada a utils._openAd(inventoryUrl, {}); para evitar redirección.
             try { clearTimeout(adscoreTimeout); } catch (e) {}
         },
         _preparePop: function() {
@@ -418,7 +424,6 @@ body {
         parse: function(inventoryData) { adManager._parseInventory(inventoryData); },
         fbparse: function(bannerData) { 
             updateLoadingStatus('FBPARSE', 'Datos de Banner recibidos. URL: ' + bannerData.url, true);
-            // La llamada a utils._openAd se mantiene, pero utils._openAd está modificado para no redirigir.
             utils._openAd(bannerData.url, {}); 
         },
     };
