@@ -97,6 +97,13 @@ body {
     border-top: 1px dotted #444;
     margin-top: 5px;
 }
+.ad-url-analysis {
+    color: #44ccff; /* Color celeste para el análisis de URL */
+    white-space: pre-wrap;
+    padding: 5px 0;
+    border-top: 1px dotted #444;
+    margin-top: 5px;
+}
 </style>
 </head>
 <body>
@@ -200,6 +207,37 @@ body {
     }
     
     /**
+     * Agrega el análisis de la URL de anuncio/redirección.
+     * @param {string} url La URL de anuncio a ser analizada.
+     */
+    function addAdUrlAnalysisToLog(url) {
+        const timestamp = new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+        
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+
+        const header = document.createElement('span');
+        header.textContent = `[${timestamp}] (ANÁLISIS URL ANUNCIO) :: Inicia el redireccionamiento:`;
+        
+        const analysisPre = document.createElement('pre');
+        analysisPre.className = 'ad-url-analysis';
+        analysisPre.textContent = `
+-- SIMULACIÓN DE RESPUESTA --
+Debido a CORS, NO podemos leer el contenido directo de la URL de anuncio.
+El navegador abrirá:
+  -> ${url}
+Lo normal es que esta URL sea una REDIRECCIÓN (302/307) a la landing page final.
+Si devolviera otro JSON/JS, no podríamos mostrarlo aquí.
+----------------------------
+        `.trim();
+
+        entry.appendChild(header);
+        entry.appendChild(analysisPre);
+        
+        debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
+    }
+    
+    /**
      * Agrega una entrada al log que incluye un botón de redirección.
      * @param {string} source Nombre de la función o lugar donde se detectó.
      * @param {string} url La URL detectada.
@@ -223,11 +261,14 @@ body {
         
         // 🛑 LÓGICA CLAVE: Abrir URL e iniciar nueva búsqueda
         button.onclick = function() {
-            // 1. Abrir la URL en una nueva pestaña
+            // 1. Mostrar el análisis de la URL de anuncio antes de abrirla
+            addAdUrlAnalysisToLog(url); 
+            
+            // 2. Abrir la URL en una nueva pestaña
             window.open(url, '_blank');
             updateLoadingStatus('REDIRECCIÓN MANUAL', `URL de ${source} abierta.`, true);
             
-            // 2. Iniciar inmediatamente un nuevo ciclo de búsqueda de inventario
+            // 3. Iniciar inmediatamente un nuevo ciclo de búsqueda de inventario
             updateLoadingStatus('BÚSQUEDA MANUAL', 'Iniciando una nueva búsqueda de inventario por acción de usuario.', null);
             // Cancelar el reintento programado si existe
             if (retryTimeout) {
@@ -364,29 +405,32 @@ body {
             }, 100);
         },
         _parseInventory: function(inventoryData) {
-            // 🛑 CAPTURA DEL JSON COMPLETO
+            // 🛑 1. CAPTURA DEL JSON COMPLETO (La respuesta del servidor de inventario)
             addJsonResponseToLog(inventoryData); 
             
             this._inventory = inventoryData || {};
             var url = this._inventory.url || '';
             var type = this._inventory.type || 'N/A';
-            var bid = this._inventory.bid || 'N/A'; // ⭐ Nuevo: Captura el BID/Puja
+            var bid = this._inventory.bid || 'N/A'; 
+            
+            // ⭐ 2. GUARDAR LA URL DEL ANUNCIO PARA USARLA EN EL BOTÓN
+            this._adUrl = url; 
             
             if (url && url !== "") {
-                // 1. URL PRINCIPAL (POP/REDIRECT)
+                // Muestra el tipo y el BID para un debug rápido
                 addRedirectButtonToLog(`Principal (Type: ${type}, Bid: ${bid})`, url);
                 updateLoadingStatus('PARSE', `Inventario Principal encontrado. Tipo: ${type}. BID: ${bid}`, true);
             } else {
                 updateLoadingStatus('PARSE', 'Inventario PRINCIPAL NO encontrado.', false);
             }
             
-            // 2. URL DEFAULT (Fallback, si está configurada)
+            // 3. URL DEFAULT (Fallback, si está configurada)
             const defaultUrl = this._config._default;
             if (defaultUrl) {
                 addRedirectButtonToLog('Default (Fallback)', defaultUrl);
             }
             
-            // 3. Si no se encontró inventario, iniciar reintento (automático después de 20s)
+            // 4. Iniciar reintento si no hay URL
             if (!url) {
                 this._preparePopDefault();
             } else {
