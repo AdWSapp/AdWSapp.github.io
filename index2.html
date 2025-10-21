@@ -1,0 +1,83 @@
+	<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9"> <![endif]-->
+<!--[if !IE]><!--> <html lang="en"> <!--<![endif]-->
+<html>
+<head>
+<title>Redirecting...</title>
+<meta name="robots" content="noindex,nofollow" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style type="text/css">
+body {
+font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+font-size: 16px;
+line-height: 1.428571429;
+color: #333;
+text-align: center;
+}
+center {
+margin-top: 60px;
+}
+p {
+width: 80%;
+}
+.hide {
+display: none;
+}
+iframe:not(.lcvid) {
+height: 100%;
+width: 100%;
+position: fixed;
+top: 0;
+left: 0;
+}
+@media (max-width: 767px) {
+iframe.lcvid {
+max-width: 350px;
+}
+}
+</style>
+</head>
+<body>
+<center>
+<h1>Redirecting now, please wait...
+<span id="timer"></span>
+<a id="proceed" href="javascript:void(0);" class="hide" onclick="proceed()">Click here</a>
+</h1>
+<p>
+<strong><a href="https://www.linkcollider.com" target="_blank">LinkCollider</a></strong> offers free social media advertising to get likes, subscribers,<br> followers, tweets, shares, blog posts, and web traffic.<br>
+<br>
+To learn more, please visit <a href="https://www.linkcollider.com" target="_blank">https://www.linkcollider.com</a>
+</p>
+<iframe class="lcvid" width="500" height="281" src="//www.youtube.com/embed/rA6--Ra4ZFo?rel=0&autoplay=1" frameborder="0"></iframe>
+</center>
+<script type="text/javascript">
+var timer = 10;
+var timer_milisec = timer * 1000;
+var time_interval = null;
+setTimeout(function () {
+document.getElementById('timer').innerHTML = '';
+clearInterval(time_interval);
+var proceedBtn = document.getElementById("proceed");
+var timerBtn = document.getElementById("timer");
+proceedBtn.classList.remove("hide");
+timerBtn.classList.add("hide");
+// window.top.location.href = 'https://ktwitter.com/random.php';
+// window.open('https://ktwitter.com/random.php');
+// setTimeout(function () {
+// window.top.location.href = 'https://www.linkcollider.com/';
+// }, 1000);
+}, timer_milisec);
+time_interval = setInterval(function () {
+document.getElementById('timer').innerHTML = timer;
+timer--;
+}, 1000);
+function proceed() {
+window.open('https://google.com');
+setTimeout(function () {
+window.top.location.href = 'https://www.linkcollider.com/';
+}, 1000);
+}
+</script>
+</body>
+</html>
