@@ -98,16 +98,14 @@ body {
         return bound;
     });
 
-    // Referencia al nuevo panel de debug
     var debugLogElement = document.getElementById('debug-log');
-
-    // --- Funciones de Interfaz de Usuario (UI) ---
     var loadingStatusElement = document.getElementById('loading-status');
     var loadingMessageElement = document.getElementById('loading-message');
 
-    /**
-     * Muestra el estado de carga en el overlay y registra un mensaje en el log de debug.
-     */
+    // Intervalo de reintento en milisegundos (20 segundos)
+    const RETRY_INTERVAL = 20000; 
+    let retryTimeout = null; // Variable para controlar el timeout del reintento
+
     function updateLoadingStatus(status, message, isSuccess) {
         // 1. Actualizar el overlay visible
         loadingStatusElement.innerHTML = status;
@@ -135,10 +133,8 @@ body {
         entry.className = 'log-entry';
         entry.textContent = logMessage;
         
-        // Insertar el nuevo mensaje después del encabezado "DEBUG LOG"
         debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
         
-        // Limitar el número de entradas para no sobrecargar
         while (debugLogElement.children.length > 20) {
             debugLogElement.removeChild(debugLogElement.lastChild);
         }
@@ -146,7 +142,6 @@ body {
 
     updateLoadingStatus('INIT', 'Script de PopAds/Adscore inicializado.', null);
 
-    // --- Fin Funciones de UI ---
     var utils = { 
         _openAd: function(url, options) {
             updateLoadingStatus('REDIR', 'Intento de apertura/redirección a: ' + url, true);
@@ -187,20 +182,18 @@ body {
     };
     var Base64 = { 
         _keyStr: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
-        encode: function(input) { /* ... código original ... */ }, 
-        decode: function(input) { /* ... código original ... */ }, 
-        _utf8_encode: function(string) { /* ... código original ... */ },
-        _utf8_decode: function(utftext) { /* ... código original ... */ }
-        // Se omiten las implementaciones completas de Base64 por concisión, son funcionales en el original.
-        encode: function(input) { var output = ""; var chr1, chr2, chr3, enc1, enc2, enc3, enc4; var i = 0; input = Base64._utf8_encode(input); while (i < input.length) { chr1 = input.charCodeAt(i++); chr2 = input.charCodeAt(i++); chr3 = input.charCodeAt(i++); enc1 = chr1 >> 2; enc2 = ((chr1 & 3) << 4) | (chr2 >> 4); enc3 = ((chr2 & 15) << 2) | (chr3 >> 6); enc4 = chr3 & 63; if (isNaN(chr2)) { enc3 = enc4 = 64; } else if (isNaN(chr3)) { enc4 = 64; } output = output + this._keyStr.charAt(enc1) + this._keyStr.charAt(enc2) + this._keyStr.charAt(enc3) + this._keyStr.charAt(enc4); } return output; }, decode: function(input) { var output = ""; var chr1, chr2, chr3; var enc1, enc2, enc3, enc4; var i = 0; input = input.replace(/[^A-Za-z0-9\+\/\=]/g, ""); while (i < input.length) { enc1 = this._keyStr.indexOf(input.charAt(i++)); enc2 = this._keyStr.indexOf(input.charAt(i++)); enc3 = this._keyStr.indexOf(input.charAt(i++)); enc4 = this._keyStr.indexOf(input.charAt(i++)); chr1 = (enc1 << 2) | (enc2 >> 4); chr2 = ((enc2 & 15) << 4) | (enc3 >> 2); chr3 = ((enc3 & 3) << 6) | enc4; output = output + String.fromCharCode(chr1); if (enc3 !== 64) { output = output + String.fromCharCode(chr2); } if (enc4 !== 64) { output = output + String.fromCharCode(chr3); } } output = Base64._utf8_decode(output); return output; }, _utf8_encode: function(string) { string = string.replace(/\r\n/g, "\n"); var utftext = ""; for (var n = 0; n < string.length; n++) { var c = string.charCodeAt(n); if (c < 128) { utftext += String.fromCharCode(c); } else if ((c > 127) && (c < 2048)) { utftext += String.fromCharCode((c >> 6) | 192); utftext += String.fromCharCode(((c & 63) | 128)); } else { utftext += String.fromCharCode((c >> 12) | 224); utftext += String.fromCharCode(((c >> 6) & 63) | 128); utftext += String.fromCharCode((c & 63) | 128); } } return utftext; }, _utf8_decode: function(utftext) { var string = ""; var i = 0; var c = 0, c1 = 0, c2 = 0; while (i < utftext.length) { c = utftext.charCodeAt(i); if (c < 128) { string += String.fromCharCode(c); i++; } else if ((c > 191) && (c < 224)) { c2 = utftext.charCodeAt(i + 1); string += String.fromCharCode(((c & 31) << 6) | (c2 & 63)); i += 2; } else { c2 = utftext.charCodeAt(i + 1); c3 = utftext.charCodeAt(i + 2); string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63)); i += 3; } } return string; }
+        encode: function(input) { var output = ""; var chr1, chr2, chr3, enc1, enc2, enc3, enc4; var i = 0; input = Base64._utf8_encode(input); while (i < input.length) { chr1 = input.charCodeAt(i++); chr2 = input.charCodeAt(i++); chr3 = input.charCodeAt(i++); enc1 = chr1 >> 2; enc2 = ((chr1 & 3) << 4) | (chr2 >> 4); enc3 = ((chr2 & 15) << 2) | (chr3 >> 6); enc4 = chr3 & 63; if (isNaN(chr2)) { enc3 = enc4 = 64; } else if (isNaN(chr3)) { enc4 = 64; } output = output + this._keyStr.charAt(enc1) + this._keyStr.charAt(enc2) + this._keyStr.charAt(enc3) + this._keyStr.charAt(enc4); } return output; }, 
+        decode: function(input) { var output = ""; var chr1, chr2, chr3; var enc1, enc2, enc3, enc4; var i = 0; input = input.replace(/[^A-Za-z0-9\+\/\=]/g, ""); while (i < input.length) { enc1 = this._keyStr.indexOf(input.charAt(i++)); enc2 = this._keyStr.indexOf(input.charAt(i++)); enc3 = this._keyStr.indexOf(input.charAt(i++)); enc4 = this._keyStr.indexOf(input.charAt(i++)); chr1 = (enc1 << 2) | (enc2 >> 4); chr2 = ((enc2 & 15) << 4) | (enc3 >> 2); chr3 = ((enc3 & 3) << 6) | enc4; output = output + String.fromCharCode(chr1); if (enc3 !== 64) { output = output + String.fromCharCode(chr2); } if (enc4 !== 64) { output = output + String.fromCharCode(chr3); } } output = Base64._utf8_decode(output); return output; }, 
+        _utf8_encode: function(string) { string = string.replace(/\r\n/g, "\n"); var utftext = ""; for (var n = 0; n < string.length; n++) { var c = string.charCodeAt(n); if (c < 128) { utftext += String.fromCharCode(c); } else if ((c > 127) && (c < 2048)) { utftext += String.fromCharCode((c >> 6) | 192); utftext += String.fromCharCode(((c & 63) | 128)); } else { utftext += String.fromCharCode((c >> 12) | 224); utftext += String.fromCharCode(((c >> 6) & 63) | 128); utftext += String.fromCharCode((c & 63) | 128); } } return utftext; }, 
+        _utf8_decode: function(utftext) { var string = ""; var i = 0; var c = 0, c1 = 0, c2 = 0; while (i < utftext.length) { c = utftext.charCodeAt(i); if (c < 128) { string += String.fromCharCode(c); i++; } else if ((c > 191) && (c < 224)) { c2 = utftext.charCodeAt(i + 1); string += String.fromCharCode(((c & 31) << 6) | (c2 & 63)); i += 2; } else { c2 = utftext.charCodeAt(i + 1); c3 = utftext.charCodeAt(i + 2); string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63)); i += 3; } } return string; }
     };
-    // CONFIGURACIÓN DEL USUARIO: PopAds
+
     var _pop = _pop || [];
     _pop.push(['siteId', 5226581]);
     _pop.push(['minBid', 0.000000]);
     _pop.push(['popundersPerIP', 0]);
     _pop.push(['delayBetween', 0]);
-    _pop.push(['default', 'https://t.mbsrv2.com/381468/3788/0?bo=3471,3472,3473,3474,3475&target=domainredirects&po=6456&aff_sub5=SF_006OG000004lmDN']); // 📢 NUEVA URL DE DEFAULT
+    _pop.push(['default', 'https://t.mbsrv2.com/381468/3788/0?bo=3471,3472,3473,3474,3475&target=domainredirects&po=6456&aff_sub5=SF_006OG000004lmDN']);
     _pop.push(['defaultPerDay', 0]);
     _pop.push(['topmostLayer', false]);
     window._pop = _pop;
@@ -224,10 +217,18 @@ body {
             updateLoadingStatus('MANAGER', 'Configuración PopAds cargada. SiteID: ' + this._config._siteId, null);
             this.adfired = false;
             utils.init({ prepop: false, catchalldiv: "never", onafteropen: function() { self.adfired = true; } });
+            
+            // Si hay un reintento pendiente, lo limpiamos antes de iniciar un ciclo nuevo
+            if (retryTimeout) {
+                clearTimeout(retryTimeout);
+                retryTimeout = null;
+                updateLoadingStatus('RETRY', 'Ciclo de reintento anterior cancelado.', true);
+            }
+
             this._adscoreDeploy();
         },
         _adscoreDeploy: function() {
-            updateLoadingStatus('ADSCORE', 'Iniciando despliegue de Adscore...', null);
+            updateLoadingStatus('ADSCORE', 'Iniciando verificación de Adscore...', null);
             var self = this;
             var adscoreScriptTimeout = 0;
             var config = this._config;
@@ -255,7 +256,7 @@ body {
             }
         },
         _checkInventory: function(adscoreSignature) {
-            updateLoadingStatus('INVENTORY', 'Verificando inventario con firma: ' + adscoreSignature, null);
+            updateLoadingStatus('INVENTORY', 'Paso 1/2: Solicitando inventario al servidor de PopAds...', null);
             this._lastci = (new Date).getTime();
             utils.clearUrls();
             var self = this;
@@ -275,7 +276,7 @@ body {
                     var script = document.createElement("script");
                     script.referrerPolicy = "unsafe-url";
                     script.src = inventoryUrl;
-                    updateLoadingStatus('INVENTORY', 'Solicitando inventario de PopAds: ' + inventoryUrl, null);
+                    updateLoadingStatus('INVENTORY', 'Paso 2/2: Esperando respuesta del servidor. URL de solicitud: ' + inventoryUrl, null);
                     try { script.onerror = function() { utils.abortPop(); currentScriptElement.onerror(); }; } catch (e) {}
                     document.body.appendChild(script);
                 }
@@ -283,33 +284,53 @@ body {
         },
         _parseInventory: function(inventoryData) {
             this._inventory = inventoryData || {};
-            var url = this._inventory.url || 'N/A';
+            var url = this._inventory.url || '';
             var type = this._inventory.type || 'N/A';
-            updateLoadingStatus('PARSE', 'Respuesta del servidor. URL: ' + url + ', Tipo: ' + type, url !== 'N/A');
+            
+            if (url && url !== "") {
+                updateLoadingStatus('PARSE', 'Respuesta: Inventario encontrado. Tipo: ' + type, true);
+            } else {
+                updateLoadingStatus('PARSE', 'Respuesta: Inventario NO encontrado.', false);
+            }
+
             this._preparePop();
         }, 
-        // LÓGICA DE REDIRECCIÓN A DEFAULT
+        // LÓGICA DE REDIRECCIÓN A DEFAULT Y REINTENTO
         _preparePopDefault: function() {
             var defaultUrl = this._config._default;
             if (defaultUrl === false || defaultUrl === "") {
-                updateLoadingStatus('DEFAULT', 'No hay URL de Default configurada. Terminando.', false);
+                updateLoadingStatus('SIN INVENTARIO', 'Buscando inventario nuevo. En estos momentos no hay URL de Default configurada. Terminando.', false);
                 utils.abortPop();
             } else {
-                updateLoadingStatus('DEFAULT', 'Inventario NO encontrado. Redirigiendo a Default.', false);
+                updateLoadingStatus('SIN INVENTARIO', 'Buscando inventario nuevo. No hay en este momento. Reintentando en ' + (RETRY_INTERVAL / 1000) + ' segundos...', false);
+                
+                // Configurar el reintento
+                retryTimeout = setTimeout(function() {
+                    updateLoadingStatus('RETRY', 'Tiempo de espera agotado (' + (RETRY_INTERVAL / 1000) + 's). Reintentando búsqueda de inventario.', null);
+                    adManager._adscoreDeploy(); // Inicia un nuevo ciclo de búsqueda
+                }, RETRY_INTERVAL);
+
+                // No redirigimos a Default, solo reintentamos buscar inventario.
                 // Si la URL por defecto estuviera activa:
                 // setTimeout(function() { window.top.location.href = defaultUrl; }, 1000);
             }
         },
         // LÓGICA DE REDIRECCIÓN A INVENTARIO
         _preparePopInventory: function() {
+            // Si el inventario es encontrado, cancelamos cualquier reintento pendiente
+            if (retryTimeout) {
+                clearTimeout(retryTimeout);
+                retryTimeout = null;
+                updateLoadingStatus('RETRY', 'Reintento cancelado: ¡Inventario encontrado!', true);
+            }
+            
             var self = this;
             const inventoryUrl = self._inventory.url;
-            updateLoadingStatus('¡ÉXITO!', 'URL de Inventario: ' + inventoryUrl, true); // MUESTRA LA URL COMPLETA
+            updateLoadingStatus('¡INVENTARIO ENCONTRADO!', 'Redireccionando a URL: ' + inventoryUrl, true);
             
             // 🛑 Si quieres pausar el script antes de la redirección para copiar la URL:
             // debugger; 
 
-            // Redirección inmediata al inventario encontrado (usando la función logueada)
             utils._openAd(inventoryUrl, {});
 
             try { clearTimeout(adscoreTimeout); } catch (e) {}
