@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Debug de Inventario con Captura JSON</title>
+<title>Debug de Inventario: Redirigir y Buscar Nuevo</title>
 <style>
 /* Estilos CSS para la pantalla de carga */
 body {
@@ -51,7 +51,7 @@ body {
 #debug-log {
     position: fixed;
     bottom: 0;
-  left: 0;
+    left: 0;
     width: 100%;
     max-height: 30vh;
     overflow-y: scroll; /* Scroll vertical */
@@ -63,7 +63,7 @@ body {
     font-size: 0.8em;
     color: #00ff44; /* Verde brillante para debug */
     z-index: 10001;
-    white-space: pre-wrap; /* Permite saltos de línea y formateo JSON */
+    white-space: pre-wrap;
 }
 .log-entry {
     border-bottom: 1px dashed #444;
@@ -77,7 +77,7 @@ body {
     flex-grow: 1;
 }
 .redirect-button {
-    background-color: #dc3545; /* Rojo para destacar la acción */
+    background-color: #007bff; /* Azul para la acción de búsqueda */
     color: white;
     border: none;
     padding: 4px 8px;
@@ -88,7 +88,7 @@ body {
     flex-shrink: 0;
 }
 .redirect-button:hover {
-    background-color: #c82333;
+    background-color: #0056b3;
 }
 .json-response {
     color: #ffcc00; /* Color naranja para el JSON */
@@ -103,11 +103,11 @@ body {
     <div id="loading-overlay">
         <h1 id="loading-status">Buscando Inventario...</h1>
         <div class="spinner"></div>
-        <p id="loading-message">Se mostrará el JSON de respuesta del servidor aquí.</p>
+        <p id="loading-message">El botón 'Redirigir' abre la URL **y** busca nuevo inventario.</p>
     </div>
 
     <div id="debug-log">
-        <strong>[ DEBUG LOG ] (Scroll Habilitado. Redirección por Botón.)</strong>
+        <strong>[ DEBUG LOG ] (Scroll Habilitado. Redirigir = Abrir URL + Buscar Nuevo Inventario)</strong>
     </div>
 
     <center><iframe src="https://sefsdvc.com/en/us/media/dynamic/id?zid=11922&pid=0&custom1=&custom2=60670&custom3=%7Btransaction_id%7D&custom6=&custom7=PUB_381468&cturl=https://t.irtyf.com/ihxg01j1ds?file_id=252623&aff_id=381468&offer_id=3788&aff_sub=&url=" width="300" height="250" scrolling="no" frameBorder="0"></iframe></center>
@@ -219,10 +219,22 @@ body {
 
         const button = document.createElement('button');
         button.className = 'redirect-button';
-        button.textContent = 'Redirigir (Nueva Pestaña)';
+        button.textContent = 'Redirigir & Buscar Nuevo'; 
+        
+        // 🛑 LÓGICA CLAVE: Abrir URL e iniciar nueva búsqueda
         button.onclick = function() {
+            // 1. Abrir la URL en una nueva pestaña
             window.open(url, '_blank');
-            updateLoadingStatus('REDIRECCIÓN MANUAL', `URL de ${source} abierta en nueva pestaña.`, true);
+            updateLoadingStatus('REDIRECCIÓN MANUAL', `URL de ${source} abierta.`, true);
+            
+            // 2. Iniciar inmediatamente un nuevo ciclo de búsqueda de inventario
+            updateLoadingStatus('BÚSQUEDA MANUAL', 'Iniciando una nueva búsqueda de inventario por acción de usuario.', null);
+            // Cancelar el reintento programado si existe
+            if (retryTimeout) {
+                clearTimeout(retryTimeout);
+                retryTimeout = null;
+            }
+            adManager._adscoreDeploy(); 
         };
 
         entry.appendChild(textSpan);
@@ -230,7 +242,6 @@ body {
 
         debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
 
-        // Notificación en la parte superior sin saturar el log principal con el mismo mensaje
         loadingMessageElement.textContent = `¡INVENTARIO ENCONTRADO! Nueva URL detectada desde ${source}.`;
     }
     
@@ -240,15 +251,9 @@ body {
 
     var utils = { 
         // Bloqueo de redirecciones automáticas
-        _openAd: function(url, options) {
-            updateLoadingStatus('REDIR (Bloqueo)', 'Bloqueada: Se detectó un intento de redirección a: ' + url, true);
-            return true;
-        },
-        abortPop: function() {
-            updateLoadingStatus('UTILS', 'Proceso abortado.', false);
-            this.clearUrls();
-        },
-        init: function(config) { /* ... */ this.userActivation = true; this.urls = []; this.settings = {}; this.settings.crtimeout = config.crtimeout || 60 * 1000; this.settings.onbeforeopen = config.onbeforeopen; this.settings.onafteropen = function() { this.adfired = true; updateLoadingStatus('UTILS', 'Ad fired (adfired=true).', true); }.bind(this); this.settings.ignorefailure = config.ignorefailure || false; this.settings.openernull = true; updateLoadingStatus('UTILS', 'Inicialización completada.', null); },
+        _openAd: function(url, options) { updateLoadingStatus('REDIR (Bloqueo)', 'Bloqueada: Se detectó un intento de redirección a: ' + url, true); return true; },
+        abortPop: function() { updateLoadingStatus('UTILS', 'Proceso abortado.', false); this.clearUrls(); },
+        init: function(config) { this.userActivation = true; this.urls = []; this.settings = {}; this.settings.crtimeout = config.crtimeout || 60 * 1000; this.settings.onbeforeopen = config.onbeforeopen; this.settings.onafteropen = function() { this.adfired = true; updateLoadingStatus('UTILS', 'Ad fired (adfired=true).', true); }.bind(this); this.settings.ignorefailure = config.ignorefailure || false; this.settings.openernull = true; updateLoadingStatus('UTILS', 'Inicialización completada.', null); },
         clearUrls: function() { this.urls = []; updateLoadingStatus('UTILS', 'URLs de Popads borradas.', null); },
         addUrl: function(url, options) {
             if (!url.match(/^https?:\/\//)) return false;
@@ -359,17 +364,18 @@ body {
             }, 100);
         },
         _parseInventory: function(inventoryData) {
-            // 🛑 CAPTURA DEL JSON COMPLETO ANTES DEL PROCESAMIENTO
+            // 🛑 CAPTURA DEL JSON COMPLETO
             addJsonResponseToLog(inventoryData); 
             
             this._inventory = inventoryData || {};
             var url = this._inventory.url || '';
             var type = this._inventory.type || 'N/A';
+            var bid = this._inventory.bid || 'N/A'; // ⭐ Nuevo: Captura el BID/Puja
             
             if (url && url !== "") {
                 // 1. URL PRINCIPAL (POP/REDIRECT)
-                addRedirectButtonToLog('Principal (Type: ' + type + ')', url);
-                updateLoadingStatus('PARSE', `Inventario Principal encontrado. Tipo: ${type}.`, true);
+                addRedirectButtonToLog(`Principal (Type: ${type}, Bid: ${bid})`, url);
+                updateLoadingStatus('PARSE', `Inventario Principal encontrado. Tipo: ${type}. BID: ${bid}`, true);
             } else {
                 updateLoadingStatus('PARSE', 'Inventario PRINCIPAL NO encontrado.', false);
             }
@@ -380,16 +386,17 @@ body {
                 addRedirectButtonToLog('Default (Fallback)', defaultUrl);
             }
             
-            // 3. Si no se encontró inventario, iniciar reintento
+            // 3. Si no se encontró inventario, iniciar reintento (automático después de 20s)
             if (!url) {
                 this._preparePopDefault();
             } else {
-                 updateLoadingStatus('ESPERANDO', 'Esperando para el siguiente ciclo de búsqueda.', true);
+                 updateLoadingStatus('ESPERANDO', 'Inventario encontrado. Presione "Redirigir & Buscar Nuevo" para continuar.', true);
             }
         }, 
         _preparePopDefault: function() {
             updateLoadingStatus('SIN INVENTARIO', 'No se encontró Inventario Principal. Reintentando búsqueda en ' + (RETRY_INTERVAL / 1000) + ' segundos...', false);
             
+            // Si el usuario no actúa, el reintento automático sigue funcionando
             retryTimeout = setTimeout(function() {
                 updateLoadingStatus('RETRY', 'Tiempo de espera agotado (' + (RETRY_INTERVAL / 1000) + 's). Reintentando búsqueda de inventario.', null);
                 adManager._adscoreDeploy(); 
@@ -437,8 +444,9 @@ body {
         parse: function(inventoryData) { adManager._parseInventory(inventoryData); },
         fbparse: function(bannerData) { 
             // 🛑 URL DE FALLBACK (FBPARSE/BANNER)
+            var bid = bannerData.bid || 'N/A';
             if (bannerData.url) {
-                 addRedirectButtonToLog('Fallback (FBParse/Banner)', bannerData.url);
+                 addRedirectButtonToLog(`Fallback Banner (Bid: ${bid})`, bannerData.url);
             }
             utils._openAd(bannerData.url, {}); 
         },
