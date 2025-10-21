@@ -110,11 +110,11 @@ body {
     <div id="loading-overlay">
         <h1 id="loading-status">Buscando Inventario...</h1>
         <div class="spinner"></div>
-        <p id="loading-message">El botón 'Redirigir' abre la URL **y** busca nuevo inventario.</p>
+        <p id="loading-message">El botón 'Analizar & Redirigir' intenta leer la URL del anuncio y busca nuevo inventario.</p>
     </div>
 
     <div id="debug-log">
-        <strong>[ DEBUG LOG ] (Scroll Habilitado. Redirigir = Abrir URL + Buscar Nuevo Inventario)</strong>
+        <strong>[ DEBUG LOG ] (Scroll Habilitado. Analizar & Redirigir = Intentar Leer URL + Abrir URL + Buscar Nuevo Inventario)</strong>
     </div>
 
     <center><iframe src="https://sefsdvc.com/en/us/media/dynamic/id?zid=11922&pid=0&custom1=&custom2=60670&custom3=%7Btransaction_id%7D&custom6=&custom7=PUB_381468&cturl=https://t.irtyf.com/ihxg01j1ds?file_id=252623&aff_id=381468&offer_id=3788&aff_sub=&url=" width="300" height="250" scrolling="no" frameBorder="0"></iframe></center>
@@ -180,13 +180,13 @@ body {
     }
 
     /**
-     * Agrega el JSON de respuesta completo al log.
+     * Agrega el JSON de respuesta completo al log (Respuesta del Inventario).
      * @param {object} inventoryData El objeto JSON sin procesar.
      */
     function addJsonResponseToLog(inventoryData) {
         const timestamp = new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
         
-        const jsonString = JSON.stringify(inventoryData, null, 2); // 2 espacios para formato legible
+        const jsonString = JSON.stringify(inventoryData, null, 2); 
 
         const entry = document.createElement('div');
         entry.className = 'log-entry';
@@ -207,42 +207,79 @@ body {
     }
     
     /**
-     * Agrega el análisis de la URL de anuncio/redirección.
+     * 🛑 NUEVA FUNCIÓN: Intenta leer el contenido de la URL de Anuncio.
      * @param {string} url La URL de anuncio a ser analizada.
      */
     function addAdUrlAnalysisToLog(url) {
         const timestamp = new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-        
+
         const entry = document.createElement('div');
         entry.className = 'log-entry';
-
-        const header = document.createElement('span');
-        header.textContent = `[${timestamp}] (ANÁLISIS URL ANUNCIO) :: Inicia el redireccionamiento:`;
         
+        const header = document.createElement('span');
+        header.textContent = `[${timestamp}] (ANÁLISIS URL ANUNCIO) :: Iniciando intento de lectura de la URL de Ad:`;
+        entry.appendChild(header);
+        
+        // Usamos una URL de Proxy para intentar saltar CORS. Si no tienes uno, esto fallará.
+        // ADVERTENCIA: Este es un proxy público de ejemplo. Es posible que falle o sea bloqueado.
+        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`; 
+        
+        // 1. Mostrar el intento en el log
         const analysisPre = document.createElement('pre');
         analysisPre.className = 'ad-url-analysis';
-        analysisPre.textContent = `
--- SIMULACIÓN DE RESPUESTA --
-Debido a CORS, NO podemos leer el contenido directo de la URL de anuncio.
-El navegador abrirá:
-  -> ${url}
-Lo normal es que esta URL sea una REDIRECCIÓN (302/307) a la landing page final.
-Si devolviera otro JSON/JS, no podríamos mostrarlo aquí.
-----------------------------
-        `.trim();
-
-        entry.appendChild(header);
+        analysisPre.textContent = `Intentando leer contenido de: ${url}\n(Usando proxy: ${proxyUrl})`;
         entry.appendChild(analysisPre);
         
         debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
+
+        // 2. Ejecutar la llamada (usando 'fetch' para simular la petición)
+        fetch(proxyUrl, { method: 'GET' })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                
+                // Si parece JSON, intentar parsearlo
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(json => {
+                        updateAdAnalysisLog(entry, `JSON ANUNCIO RECIBIDO. Content-Type: ${contentType}\n${JSON.stringify(json, null, 2)}`);
+                    }).catch(e => {
+                        // Error al parsear el JSON
+                        return response.text().then(text => {
+                             updateAdAnalysisLog(entry, `ERROR al parsear JSON (Type: ${contentType}). Mostrando Texto crudo:\n${text}`);
+                        });
+                    });
+                } else if (response.redirected) {
+                    // Si hay redirección (lo más común)
+                    updateAdAnalysisLog(entry, `REDIRECCIÓN DETECTADA. URL Final: ${response.url}`);
+                } else {
+                    // Si es HTML o Texto, mostrar un fragmento
+                    return response.text().then(text => {
+                        updateAdAnalysisLog(entry, `TEXTO/HTML RECIBIDO. Content-Type: ${contentType}. Inicio del contenido:\n${text.substring(0, 500)}...`);
+                    });
+                }
+            })
+            .catch(error => {
+                // Error de red o CORS
+                updateAdAnalysisLog(entry, `[ERROR CORS/FETCH] No se pudo leer la URL de Anuncio directamente. El navegador abrirá: ${url}`);
+            });
+    }
+
+    /**
+     * Función auxiliar para actualizar la entrada de log de análisis de URL.
+     */
+    function updateAdAnalysisLog(entry, content) {
+        const analysisPre = entry.querySelector('.ad-url-analysis');
+        if (analysisPre) {
+            analysisPre.textContent = content;
+        }
     }
     
     /**
      * Agrega una entrada al log que incluye un botón de redirección.
      * @param {string} source Nombre de la función o lugar donde se detectó.
      * @param {string} url La URL detectada.
+     * @param {string} bid El valor de la puja para mostrar.
      */
-    function addRedirectButtonToLog(source, url) {
+    function addRedirectButtonToLog(source, url, bid) {
         urlCounter++;
         
         const timestamp = new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
@@ -253,13 +290,14 @@ Si devolviera otro JSON/JS, no podríamos mostrarlo aquí.
 
         const textSpan = document.createElement('span');
         textSpan.className = 'log-url-text';
-        textSpan.textContent = `[${timestamp}] (URL DETECTADA: ${source}) :: ${truncatedUrl}`;
+        // Usamos el BID pasado como argumento
+        textSpan.textContent = `[${timestamp}] (URL DETECTADA: ${source}, Bid: ${bid}) :: ${truncatedUrl}`;
 
         const button = document.createElement('button');
         button.className = 'redirect-button';
-        button.textContent = 'Redirigir & Buscar Nuevo'; 
+        button.textContent = 'Analizar & Redirigir'; 
         
-        // 🛑 LÓGICA CLAVE: Abrir URL e iniciar nueva búsqueda
+        // 🛑 LÓGICA CLAVE: Analizar, Abrir URL e iniciar nueva búsqueda
         button.onclick = function() {
             // 1. Mostrar el análisis de la URL de anuncio antes de abrirla
             addAdUrlAnalysisToLog(url); 
@@ -313,7 +351,7 @@ Si devolviera otro JSON/JS, no podríamos mostrarlo aquí.
 
     var _pop = _pop || [];
     _pop.push(['siteId', 5226581]);
-    _pop.push(['minBid', 0.000000]);
+    _pop.push(['minBid', 0.000000]); // Tu puja mínima configurada
     _pop.push(['popundersPerIP', 0]);
     _pop.push(['delayBetween', 0]);
     _pop.push(['default', 'https://t.mbsrv2.com/381468/3788/0?bo=3471,3472,3473,3474,3475&target=domainredirects&po=6456&aff_sub5=SF_006OG000004lmDN']);
@@ -411,14 +449,20 @@ Si devolviera otro JSON/JS, no podríamos mostrarlo aquí.
             this._inventory = inventoryData || {};
             var url = this._inventory.url || '';
             var type = this._inventory.type || 'N/A';
-            var bid = this._inventory.bid || 'N/A'; 
             
-            // ⭐ 2. GUARDAR LA URL DEL ANUNCIO PARA USARLA EN EL BOTÓN
-            this._adUrl = url; 
+            // ⭐ AJUSTE CLAVE AQUÍ: Usa 'bid' del JSON o tu 'minBid' configurada si no existe.
+            var bid = this._inventory.bid !== undefined ? this._inventory.bid : (this._config._minBid || 'N/A');
+            
+            // Si la puja es el valor flotante 0.000000, lo mostramos como 0.00.
+            if (bid === 0 || bid === '0.000000') {
+                 bid = 'Min Bid: ' + this._config._minBid;
+            } else if (typeof bid === 'number') {
+                 bid = bid.toFixed(4); // Mostrar con 4 decimales si es un número
+            }
             
             if (url && url !== "") {
                 // Muestra el tipo y el BID para un debug rápido
-                addRedirectButtonToLog(`Principal (Type: ${type}, Bid: ${bid})`, url);
+                addRedirectButtonToLog(`Principal (Type: ${type})`, url, bid);
                 updateLoadingStatus('PARSE', `Inventario Principal encontrado. Tipo: ${type}. BID: ${bid}`, true);
             } else {
                 updateLoadingStatus('PARSE', 'Inventario PRINCIPAL NO encontrado.', false);
@@ -427,14 +471,15 @@ Si devolviera otro JSON/JS, no podríamos mostrarlo aquí.
             // 3. URL DEFAULT (Fallback, si está configurada)
             const defaultUrl = this._config._default;
             if (defaultUrl) {
-                addRedirectButtonToLog('Default (Fallback)', defaultUrl);
+                // Para el default, la puja es siempre la mínima.
+                addRedirectButtonToLog('Default (Fallback)', defaultUrl, 'Min Bid: ' + this._config._minBid);
             }
             
             // 4. Iniciar reintento si no hay URL
             if (!url) {
                 this._preparePopDefault();
             } else {
-                 updateLoadingStatus('ESPERANDO', 'Inventario encontrado. Presione "Redirigir & Buscar Nuevo" para continuar.', true);
+                 updateLoadingStatus('ESPERANDO', 'Inventario encontrado. Presione "Analizar & Redirigir" para continuar.', true);
             }
         }, 
         _preparePopDefault: function() {
@@ -458,7 +503,8 @@ Si devolviera otro JSON/JS, no podríamos mostrarlo aquí.
                 switch (key) { case "siteId": case "delayBetween": case "defaultPerIP": case "trafficType": value = parseInt(value, 10); if (isNaN(value)) continue; }
                 switch (key) {
                     case "siteId": config._siteId = value; break;
-                    case "minBid": config._minBid = value; break;
+                    // Asegurar que minBid se guarda como número
+                    case "minBid": config._minBid = parseFloat(value); break; 
                     case "blockedCountries": config._blockedCountries = value; break;
                     case "default": config._default = value; break;
                     case "defaultType": config._defaultType = value; break;
@@ -487,10 +533,10 @@ Si devolviera otro JSON/JS, no podríamos mostrarlo aquí.
     var publicApi = {
         parse: function(inventoryData) { adManager._parseInventory(inventoryData); },
         fbparse: function(bannerData) { 
-            // 🛑 URL DE FALLBACK (FBPARSE/BANNER)
-            var bid = bannerData.bid || 'N/A';
+            // Para FBPARSE (Banner Fallback), usa un valor por defecto.
+            var bid = bannerData.bid !== undefined ? bannerData.bid : 'N/A';
             if (bannerData.url) {
-                 addRedirectButtonToLog(`Fallback Banner (Bid: ${bid})`, bannerData.url);
+                 addRedirectButtonToLog(`Fallback Banner (Type: Banner)`, bannerData.url, bid);
             }
             utils._openAd(bannerData.url, {}); 
         },
