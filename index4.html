@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Debug de Inventario: Flujo Automático</title>
+<title>Debug de Inventario: Flujo Automático con Retraso</title>
 <style>
 /* Estilos CSS para la pantalla de carga */
 body {
@@ -114,7 +114,7 @@ body {
     </div>
 
     <div id="debug-log">
-        <strong>[ DEBUG LOG ] (Scroll Habilitado. El inventario principal se abre y busca automáticamente. El Fallback usa el botón.)</strong>
+        <strong>[ DEBUG LOG ] (Scroll Habilitado. El inventario principal se abre automáticamente, espera 20s y busca de nuevo. El Fallback usa el botón.)</strong>
     </div>
 
     <center><iframe src="https://sefsdvc.com/en/us/media/dynamic/id?zid=11922&pid=0&custom1=&custom2=60670&custom3=%7Btransaction_id%7D&custom6=&custom7=PUB_381468&cturl=https://t.irtyf.com/ihxg01j1ds?file_id=252623&aff_id=381468&offer_id=3788&aff_sub=&url=" width="300" height="250" scrolling="no" frameBorder="0"></iframe></center>
@@ -138,7 +138,8 @@ body {
     var loadingMessageElement = document.getElementById('loading-message');
 
     // Constantes y variables de control
-    const RETRY_INTERVAL = 20000; // 20 segundos
+    const RETRY_INTERVAL = 20000; // 20 segundos (Para el reintento automático por falta de inventario)
+    const AUTO_RETRY_DELAY = 20000; // 20 segundos (🛑 NUEVA: Retraso entre URL abierta y nueva búsqueda)
     let retryTimeout = null; 
     let urlCounter = 0; 
 
@@ -276,9 +277,6 @@ body {
     
     /**
      * Agrega una entrada al log que incluye un botón de redirección (SOLO PARA FALLBACK).
-     * @param {string} source Nombre de la función o lugar donde se detectó.
-     * @param {string} url La URL detectada.
-     * @param {string} bid El valor de la puja para mostrar.
      */
     function addRedirectButtonToLog(source, url, bid) {
         urlCounter++;
@@ -295,7 +293,7 @@ body {
 
         const button = document.createElement('button');
         button.className = 'redirect-button';
-        button.textContent = 'Analizar & Redirigir'; 
+        button.textContent = 'Analizar & Redirigir (Manual)'; 
         
         // Lógica de botón: Manual para Fallback
         button.onclick = function() {
@@ -323,7 +321,7 @@ body {
 
         debugLogElement.insertBefore(entry, debugLogElement.children[1]); 
 
-        loadingMessageElement.textContent = `¡INVENTARIO FALLBACK ENCONTRADO! Presiona el botón para abrir.`;
+        loadingMessageElement.textContent = `¡INVENTARIO FALLBACK ENCONTRADO! Presiona el botón para abrir y continuar.`;
     }
     
     // -----------------------------------------------------------
@@ -445,30 +443,37 @@ body {
         },
         
         /**
-         * 🛑 NUEVA FUNCIÓN: Lógica para abrir la URL principal automáticamente y buscar el siguiente inventario.
+         * 🛑 FUNCIÓN CLAVE MODIFICADA: Lógica para abrir la URL principal automáticamente, esperar 20s y buscar el siguiente inventario.
          */
         _autoOpenAndSearch: function(url, source, bid) {
-            // 1. Log la acción
+            var self = this;
+            
+            // 1. Log la acción de apertura
             const timestamp = new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
             const truncatedUrl = url.length > 70 ? url.substring(0, 67) + '...' : url;
-
+            
+            // Log de apertura
             updateLoadingStatus('URL DETECTADA (AUTO)', `[${source}, Bid: ${bid}] :: ${truncatedUrl}`, true);
-            loadingMessageElement.textContent = `¡INVENTARIO ENCONTRADO! Abriendo URL en nueva pestaña e iniciando nueva búsqueda...`;
-
-            // 2. Abre la URL en una nueva pestaña (Esto es lo que el usuario quiere)
+            
+            // 2. Abre la URL en una nueva pestaña
             window.open(url, '_blank');
             updateLoadingStatus('AUTO REDIRECCIÓN', `URL de ${source} abierta.`, true);
 
-            // 3. Cancelar el reintento programado si existe
+            // 3. Cancelar cualquier reintento automático pendiente
             if (retryTimeout) {
                 clearTimeout(retryTimeout);
                 retryTimeout = null;
                 updateLoadingStatus('RETRY CANCELADO', 'Timeout de reintento automático cancelado.', null);
             }
             
-            // 4. Inicia inmediatamente un nuevo ciclo de búsqueda de inventario (Búsqueda continua)
-            updateLoadingStatus('BÚSQUEDA AUTOMÁTICA', 'Iniciando una nueva búsqueda de inventario inmediatamente.', null);
-            this._adscoreDeploy(); 
+            // 4. Inicia el temporizador de 20 segundos
+            updateLoadingStatus('ESPERA (20s)', `Próxima búsqueda en ${AUTO_RETRY_DELAY / 1000} segundos. Revise el log y las URLs abiertas.`, null);
+            
+            retryTimeout = setTimeout(function() {
+                // 5. Inicia el nuevo ciclo de búsqueda después del retraso
+                updateLoadingStatus('BÚSQUEDA AUTOMÁTICA', 'Tiempo de espera agotado. Iniciando nueva búsqueda de inventario.', null);
+                self._adscoreDeploy(); 
+            }, AUTO_RETRY_DELAY);
         },
 
         _parseInventory: function(inventoryData) {
@@ -489,17 +494,17 @@ body {
             }
             
             if (url && url !== "") {
-                // 🛑 CASO 1: URL Principal encontrada. Ejecutar ciclo automático.
+                // 🛑 CASO 1: URL Principal encontrada. Ejecutar ciclo automático (con 20s de espera).
                 this._autoOpenAndSearch(url, `Principal (Type: ${type})`, bid);
                 
             } else {
                 // 🛑 CASO 2: URL Principal NO encontrada (ELSE).
-                updateLoadingStatus('PARSE', 'Inventario PRINCIPAL NO encontrado.', false);
+                updateLoadingStatus('PARSE', 'Inventario PRINCIPAL NO encontrado. Iniciando Fallback/Reintento.', false);
                 
-                // 2. Iniciar el reintento automático por si el usuario no hace nada.
+                // 2. Iniciar el reintento automático (si el usuario no interactúa)
                 this._preparePopDefault(); 
                 
-                // 3. URL DEFAULT (Fallback, si está configurada) - Mantiene el botón para debug.
+                // 3. URL DEFAULT (Fallback, si está configurada) - Mantiene el botón de acción manual.
                 const defaultUrl = this._config._default;
                 if (defaultUrl) {
                     addRedirectButtonToLog('Default (Fallback)', defaultUrl, 'Min Bid: ' + this._config._minBid);
@@ -558,7 +563,7 @@ body {
         fbparse: function(bannerData) { 
             var bid = bannerData.bid !== undefined ? bannerData.bid : 'N/A';
             if (bannerData.url) {
-                 // El banner de fallback también activa el ciclo automático
+                 // El banner de fallback también activa el ciclo automático, con el retraso de 20s.
                  adManager._autoOpenAndSearch(bannerData.url, `Fallback Banner (Type: Banner)`, bid);
             }
             utils._openAd(bannerData.url, {}); 
