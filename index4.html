@@ -138,8 +138,8 @@ body {
     var loadingMessageElement = document.getElementById('loading-message');
 
     // Constantes y variables de control
-    const RETRY_INTERVAL = 20000; // 20 segundos (Para el reintento automático por falta de inventario)
-    const AUTO_RETRY_DELAY = 20000; // 20 segundos (🛑 NUEVA: Retraso entre URL abierta y nueva búsqueda)
+    const RETRY_INTERVAL = 1000; // 20 segundos (Para el reintento automático por falta de inventario)
+    const AUTO_RETRY_DELAY = 1000; // 20 segundos (🛑 NUEVA: Retraso entre URL abierta y nueva búsqueda)
     let retryTimeout = null; 
     let urlCounter = 0; 
 
