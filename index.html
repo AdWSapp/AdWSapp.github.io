@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>X Elon Musk Donald Trump Video MP4</title>
+    <title>Página de Redirección Silenciosa con Estado</title>
     <style>
         body { 
             margin: 0; 
@@ -36,13 +36,13 @@
             
             // =================================================================
             // 🛑 VARIABLE DE CONTROL CLAVE: 
-            // - Si es 'true', el script reintenta buscar inventario (RETRY_INTERVAL).
-            // - Si es 'false', redirige inmediatamente a la URL 'default'.
+            // Si es 'false' (como pides), redirige INMEDIATAMENTE a la URL 'default' 
+            // si NO hay inventario principal.
             // =================================================================
             const RETRY_ON_NO_INVENTORY = false; 
             
             // Constantes de tiempo 
-            const RETRY_INTERVAL = 20000; // 20 segundos para reintentar (si está habilitado)
+            const RETRY_INTERVAL = 20000; // 20 segundos para reintentar (si se pone true)
 
             let retryTimeout = null; 
             const statusElement = document.getElementById('status-message');
@@ -83,7 +83,7 @@
             var PAO_GLOBAL_VAR = "_pao";
             var adscoreTimeout = null;
             
-            // === UTILIDADES MÍNIMAS ===
+            // ... (Resto de Base64 y Utilities no modificado) ...
             var utils = {
                 _openAd: function(url, options) { return true; },
                 abortPop: function() { this.clearUrls(); },
@@ -104,7 +104,6 @@
                 }
             };
             
-            // Base64 (Mantenido por necesidad del Adscore)
             var Base64 = {
                 _keyStr: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
                 encode: function(input) {
@@ -171,6 +170,7 @@
                 }
             };
             window.Base64 = Base64;
+            // ... (Fin de Base64 y Utilities) ...
 
 
             // === AD MANAGER (LÓGICA CENTRAL) ===
@@ -296,7 +296,7 @@
                             try {
                                 script.onerror = function() {
                                     utils.abortPop();
-                                    // Error de conexión, aplicar lógica de default/reintento
+                                    // Error de conexión
                                     if (RETRY_ON_NO_INVENTORY) {
                                         adManager._preparePopDefault();
                                     } else {
@@ -311,7 +311,7 @@
                 },
 
                 _autoOpen: function(url) {
-                    updateStatus("Inventario Encontrado. Redirigiendo...");
+                    // El mensaje se actualiza antes en _parseInventory
                     window.location.href = url;
                 },
 
@@ -344,18 +344,22 @@
                  */
                 _parseInventory: function(inventoryData) {
                     this._inventory = inventoryData || {};
+                    // Usamos Object.keys para ser estrictos en la verificación de un objeto vacío {}
+                    var hasData = Object.keys(this._inventory).length > 0;
                     var url = this._inventory.url || '';
 
-                    if (url && url !== "") {
-                        // 🛑 CASO 1: Inventario encontrado. Redirige al anuncio.
+                    if (hasData && url && url !== "") {
+                        // 🛑 CASO 1: Inventario encontrado Y URL válida. Redirige al anuncio.
+                        updateStatus(`Inventario Encontrado. Redirigiendo a: ${url.substring(0, 50)}...`);
                         this._autoOpen(url);
                     } else {
-                        // 🛑 CASO 2: Inventario NO encontrado.
+                        // 🛑 CASO 2: Inventario NO encontrado o URL vacía/nula.
+                        
                         if (RETRY_ON_NO_INVENTORY) {
-                            // Opción A: Reintentar después de RETRY_INTERVAL
+                            // Opción A: Reintentar (solo si RETRY_ON_NO_INVENTORY es true)
                             this._preparePopDefault();
                         } else {
-                            // Opción B: Redirigir inmediatamente al default
+                            // Opción B: Redirigir inmediatamente al default (si RETRY_ON_NO_INVENTORY es false)
                             this._redirectToDefault();
                         }
                     }
@@ -389,9 +393,10 @@
                 },
                 fbparse: function(bannerData) {
                     if (bannerData.url) {
+                        updateStatus(`Inventario Fallback Encontrado. Redirigiendo a: ${bannerData.url.substring(0, 50)}...`);
                         adManager._autoOpen(bannerData.url);
                     } else {
-                         // Si el fallback banner falla, usar la lógica general
+                         // Si el fallback banner falla
                         if (RETRY_ON_NO_INVENTORY) {
                             adManager._preparePopDefault();
                         } else {
