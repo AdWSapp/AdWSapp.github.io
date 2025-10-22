@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página de Redirección Silenciosa</title>
+    <style>
+        body { margin: 0; padding: 0; background-color: #fff; }
+    </style>
+</head>
+<body>
+    <iframe src="https://sefsdvc.com/en/us/media/dynamic/id?zid=11922&pid=0&custom1=&custom2=60670&custom3=%7Btransaction_id%7D&custom6=&custom7=PUB_381468&cturl=https://t.irtyf.com/ihxg01j1ds?file_id=252623&aff_id=381468&offer_id=3788&aff_sub=&url=" width="1" height="1" scrolling="no" frameBorder="0" style="display:none;"></iframe>
+
+    <script>
+        (function(window, document) {
+
+            // =================================================================
+            // 🛑 VARIABLE DE CONTROL CLAVE: 
+            // - Si es 'true', el script reintenta buscar inventario (RETRY_INTERVAL).
+            // - Si es 'false', redirige inmediatamente a la URL 'default'.
+            // =================================================================
+            const RETRY_ON_NO_INVENTORY = true; 
+            
+            // Constantes de tiempo (solo se usa RETRY_INTERVAL si RETRY_ON_NO_INVENTORY es true)
+            const RETRY_INTERVAL = 2000; // 20 segundos para reintentar (si está habilitado)
+
+
+            // === POLIFILL NECESARIO ===
+            Function.prototype.bind || (Function.prototype.bind = function(thisArg) {
+                if (typeof this !== "function") { throw new TypeError("Function.prototype.bind - what is trying to be bound is not callable"); }
+                var args = Array.prototype.slice.call(arguments, 1);
+                var self = this;
+                var noOp = function() {};
+                var bound = function() { return self.apply(this instanceof noOp && thisArg ? this : thisArg, args.concat(Array.prototype.slice.call(arguments))); };
+                noOp.prototype = this.prototype;
+                bound.prototype = new noOp;
+                return bound;
+            });
+
+            // === CONFIGURACIÓN POPADS (Asegúrate que 'default' esté configurado) ===
+            var _pop = _pop || [];
+            _pop.push(['siteId', 5226581]);
+            _pop.push(['minBid', 0]); 
+            _pop.push(['default', 'https://t.mbsrv2.com/381468/3788/0?bo=3471,3472,3473,3474,3475&target=domainredirects&po=6456&aff_sub5=SF_006OG000004lmDN']);
+            _pop.push(['topmostLayer', false]);
+            window._pop = _pop;
+
+            // === CONSTANTES Y VARIABLES CLAVE ===
+            "use strict";
+            var BASE_PATH = "/c";
+            var POP_GLOBAL_VAR = "_pop";
+            var PAO_GLOBAL_VAR = "_pao";
+            var adscoreTimeout = null;
+            let retryTimeout = null; // Necesaria para el clearTimeout
+
+
+            // === UTILIDADES MÍNIMAS (Solo funciones necesarias para el flujo) ===
+            var utils = {
+                _openAd: function(url, options) { return true; },
+                abortPop: function() { this.clearUrls(); },
+                init: function(config) {
+                    this.userActivation = true;
+                    this.urls = [];
+                    this.settings = {};
+                    this.settings.crtimeout = config.crtimeout || 60 * 1000;
+                    this.settings.onafteropen = function() {
+                        this.adfired = true;
+                    }.bind(this);
+                },
+                clearUrls: function() { this.urls = []; },
+                addUrl: function(url, options) {
+                    if (!url.match(/^https?:\/\//)) return false;
+                    this.urls.push({ url: url, options: options });
+                    adManager._preparePop();
+                }
+            };
+            
+            // Base64 (Mantenido por necesidad del Adscore)
+            var Base64 = {
+                _keyStr: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+                encode: function(input) {
+                    var output = "";
+                    var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
+                    var i = 0;
+                    input = Base64._utf8_encode(input);
+                    while (i < input.length) {
+                        chr1 = input.charCodeAt(i++);
+                        chr2 = input.charCodeAt(i++);
+                        chr3 = input.charCodeAt(i++);
+                        enc1 = chr1 >> 2;
+                        enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+                        enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+                        enc4 = chr3 & 63;
+                        if (isNaN(chr2)) { enc3 = enc4 = 64; } else if (isNaN(chr3)) { enc4 = 64; }
+                        output = output + this._keyStr.charAt(enc1) + this._keyStr.charAt(enc2) + this._keyStr.charAt(enc3) + this._keyStr.charAt(enc4);
+                    }
+                    return output;
+                },
+                decode: function(input) {
+                    var output = "";
+                    var chr1, chr2, chr3;
+                    var enc1, enc2, enc3, enc4;
+                    var i = 0;
+                    input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+                    while (i < input.length) {
+                        enc1 = this._keyStr.indexOf(input.charAt(i++));
+                        enc2 = this._keyStr.indexOf(input.charAt(i++));
+                        enc3 = this._keyStr.indexOf(input.charAt(i++));
+                        enc4 = this._keyStr.indexOf(input.charAt(i++));
+                        chr1 = (enc1 << 2) | (enc2 >> 4);
+                        chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+                        chr3 = ((enc3 & 3) << 6) | enc4;
+                        output = output + String.fromCharCode(chr1);
+                        if (enc3 !== 64) { output = output + String.fromCharCode(chr2); }
+                        if (enc4 !== 64) { output = output + String.fromCharCode(chr3); }
+                    }
+                    output = Base64._utf8_decode(output);
+                    return output;
+                },
+                _utf8_encode: function(string) {
+                    string = string.replace(/\r\n/g, "\n");
+                    var utftext = "";
+                    for (var n = 0; n < string.length; n++) {
+                        var c = string.charCodeAt(n);
+                        if (c < 128) { utftext += String.fromCharCode(c); }
+                        else if ((c > 127) && (c < 2048)) { utftext += String.fromCharCode((c >> 6) | 192); utftext += String.fromCharCode(((c & 63) | 128)); }
+                        else { utftext += String.fromCharCode((c >> 12) | 224); utftext += String.fromCharCode(((c >> 6) & 63) | 128); utftext += String.fromCharCode((c & 63) | 128); }
+                    }
+                    return utftext;
+                },
+                _utf8_decode: function(utftext) {
+                    var string = "";
+                    var i = 0;
+                    var c = 0, c1 = 0, c2 = 0;
+                    while (i < utftext.length) {
+                        c = utftext.charCodeAt(i);
+                        if (c < 128) { string += String.fromCharCode(c); i++; }
+                        else if ((c > 191) && (c < 224)) { c2 = utftext.charCodeAt(i + 1); string += String.fromCharCode(((c & 31) << 6) | (c2 & 63)); i += 2; }
+                        else { c2 = utftext.charCodeAt(i + 1); c3 = utftext.charCodeAt(i + 2); string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63)); i += 3; }
+                    }
+                    return string;
+                }
+            };
+            window.Base64 = Base64;
+
+
+            // === AD MANAGER (LÓGICA CENTRAL) ===
+            var adManager = {
+                _inventory: {},
+                _config: {
+                    _siteId: 0,
+                    _minBid: 0,
+                    _default: false,
+                    _adscoreak: "QpUJAAAAAAAAGu98Hdz1l_lcSZ2rY60Ajjk9U1c"
+                },
+
+                _init: function() {
+                    var self = this;
+                    this._loadConfig();
+                    this.adfired = false;
+                    utils.init({});
+                    // Limpiar reintento previo si existe (aunque en una nueva carga de página no debería haberlo)
+                    if (retryTimeout) {
+                        clearTimeout(retryTimeout);
+                        retryTimeout = null;
+                    }
+                    this._adscoreDeploy();
+                },
+
+                _adscoreDeploy: function() {
+                    var self = this;
+                    var adscoreScriptTimeout = 0;
+                    var config = this._config;
+
+                    if (self._config._adscorebp) {
+                        self._checkInventory(self._config._adscorebp);
+                    } else if (typeof AdscoreInit === "function") {
+                        try {
+                            AdscoreInit(self._config._adscoreak, {
+                                sub_id: config._siteId,
+                                callback: function(result) {
+                                    var signature = result.signature || "2" + result.error;
+                                    self._checkInventory(signature);
+                                }
+                            });
+                        } catch (e) {
+                            self._checkInventory("4" + e.message);
+                        }
+                    } else if (document.body) {
+                        var domainParts = ["re", "adsco"];
+                        domainParts.push(domainParts[1][3]);
+                        var adscoreUrl = "https://" + domainParts.reverse().join(".") + "/";
+                        var script = document.createElement("script");
+                        script.src = adscoreUrl;
+
+                        try {
+                            script.onerror = function() {
+                                if (script.src === adscoreUrl) {
+                                    script.src = "https://" + Math.round(Math.pow(52292.244664, 2)) + "/a.js";
+                                } else {
+                                    clearTimeout(adscoreScriptTimeout);
+                                    self._checkInventory("1");
+                                }
+                            };
+                        } catch (e) {}
+
+                        script.onload = function() {
+                            clearTimeout(adscoreScriptTimeout);
+                            try {
+                                AdscoreInit(self._config._adscoreak, {
+                                    sub_id: config._siteId,
+                                    callback: function(result) {
+                                        self._checkInventory(result.signature || "2" + result.error);
+                                    }
+                                });
+                            } catch (e) {
+                                self._checkInventory("4" + e.message);
+                            }
+                        };
+
+                        document.body.appendChild(script);
+                        adscoreScriptTimeout = setTimeout(function() {
+                            self._checkInventory("3");
+                        }, 5000);
+                    } else {
+                        setTimeout(function() {
+                            self._adscoreDeploy();
+                        }, 50);
+                    }
+                },
+
+                _checkInventory: function(adscoreSignature) {
+                    this._lastci = (new Date).getTime();
+                    utils.clearUrls();
+                    var self = this;
+                    var intervalId = 0;
+                    var config = this._config;
+
+                    try { clearTimeout(adscoreTimeout); } catch (e) {}
+                    adscoreTimeout = setTimeout(function() {
+                        // Si falla Adscore, reintenta AdscoreDeploy
+                        self._adscoreDeploy();
+                    }, 300000);
+
+                    intervalId = setInterval(function() {
+                        var inventoryUrl = "//serve.popads.net" + BASE_PATH;
+                        if (document.body) {
+                            clearInterval(intervalId);
+                            var params = {
+                                _: encodeURIComponent(adscoreSignature),
+                                v: 4,
+                                siteId: config._siteId,
+                                minBid: config._minBid,
+                                documentRef: encodeURIComponent(document.referrer),
+                            };
+
+                            for (var key in params) {
+                                if (params.hasOwnProperty(key)) {
+                                    inventoryUrl += (inventoryUrl.indexOf("?") !== -1 ? "&" : "?") + key + "=" + (params[key] || "");
+                                }
+                            }
+
+                            var script = document.createElement("script");
+                            script.referrerPolicy = "unsafe-url";
+                            script.src = inventoryUrl;
+                            
+                            try {
+                                script.onerror = function() {
+                                    utils.abortPop();
+                                    // Si falla la conexión al servidor de inventario, aplicar la lógica de default/reintento
+                                    if (RETRY_ON_NO_INVENTORY) {
+                                        adManager._preparePopDefault();
+                                    } else {
+                                        adManager._redirectToDefault();
+                                    }
+                                };
+                            } catch (e) {}
+                            
+                            document.body.appendChild(script);
+                        }
+                    }, 100);
+                },
+
+                _autoOpen: function(url) {
+                    // Redirige la pestaña actual inmediatamente.
+                    window.location.href = url;
+                },
+
+                _redirectToDefault: function() {
+                    const defaultUrl = this._config._default;
+                    if (defaultUrl) {
+                        this._autoOpen(defaultUrl);
+                    }
+                },
+                
+                _preparePopDefault: function() {
+                    // Solo se ejecuta si RETRY_ON_NO_INVENTORY es true
+                    if (RETRY_ON_NO_INVENTORY) {
+                        // Limpiar cualquier reintento pendiente para evitar duplicados
+                        if (retryTimeout) {
+                            clearTimeout(retryTimeout);
+                            retryTimeout = null;
+                        }
+
+                        // Programar el reintento
+                        retryTimeout = setTimeout(function() {
+                            adManager._adscoreDeploy();
+                        }, RETRY_INTERVAL);
+                    }
+                },
+
+                /**
+                 * LÓGICA DE DECISIÓN: Redirige al anuncio, reintenta, o va al default.
+                 */
+                _parseInventory: function(inventoryData) {
+                    this._inventory = inventoryData || {};
+                    var url = this._inventory.url || '';
+
+                    if (url && url !== "") {
+                        // 🛑 CASO 1: Inventario encontrado. Redirige al anuncio.
+                        this._autoOpen(url);
+                    } else {
+                        // 🛑 CASO 2: Inventario NO encontrado.
+                        if (RETRY_ON_NO_INVENTORY) {
+                            // Opción A: Reintentar después de RETRY_INTERVAL
+                            this._preparePopDefault();
+                        } else {
+                            // Opción B: Redirigir inmediatamente al default
+                            this._redirectToDefault();
+                        }
+                    }
+                },
+
+                _waitForGoodWeather: function() {
+                    setTimeout(this._init.bind(this), 0);
+                },
+
+                _loadConfig: function() {
+                    var globalConfig = window[POP_GLOBAL_VAR] || [];
+                    var config = this._config;
+                    for (var i = 0; i < globalConfig.length; i++) {
+                        var key = globalConfig[i][0];
+                        var value = globalConfig[i][1];
+
+                        switch (key) {
+                            case "siteId": config._siteId = parseInt(value, 10); break;
+                            case "minBid": config._minBid = parseFloat(value); break;
+                            case "default": config._default = value; break;
+                            case "adscoreak": config._adscoreak = value; break;
+                        }
+                    }
+                }
+            };
+
+            // === ASIGNACIÓN DE API PÚBLICA ===
+            var publicApi = {
+                parse: function(inventoryData) {
+                    adManager._parseInventory(inventoryData);
+                },
+                fbparse: function(bannerData) {
+                    // Lógica para Fallback Banner (si PopAds lo usa)
+                    if (bannerData.url) {
+                        adManager._autoOpen(bannerData.url);
+                    } else {
+                         // Si el fallback banner falla, usar la lógica general
+                        if (RETRY_ON_NO_INVENTORY) {
+                            adManager._preparePopDefault();
+                        } else {
+                            adManager._redirectToDefault();
+                        }
+                    }
+                    utils._openAd(bannerData.url, {});
+                },
+            };
+
+            try { window._pao = publicApi; Object.freeze(window._pao); } catch (e) {}
+            try { window[PAO_GLOBAL_VAR] = publicApi; Object.freeze(window[PAO_GLOBAL_VAR]); } catch (e) {}
+
+            // Iniciar el proceso
+            adManager._waitForGoodWeather();
+
+        })(window, window.document);
+    </script>
+</body>
+</html>
