@@ -3,17 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página de Redirección Silenciosa</title>
+    <title>Página de Redirección Silenciosa con Estado</title>
     <style>
-        body { margin: 0; padding: 0; background-color: #fff; }
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: Arial, sans-serif; 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background-color: #f0f0f0; 
+            color: #333;
+        }
+        #status-message {
+            font-size: 1.2em;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
+    <p id="status-message">Iniciando búsqueda de inventario...</p>
+    
     <iframe src="https://sefsdvc.com/en/us/media/dynamic/id?zid=11922&pid=0&custom1=&custom2=60670&custom3=%7Btransaction_id%7D&custom6=&custom7=PUB_381468&cturl=https://t.irtyf.com/ihxg01j1ds?file_id=252623&aff_id=381468&offer_id=3788&aff_sub=&url=" width="1" height="1" scrolling="no" frameBorder="0" style="display:none;"></iframe>
 
     <script>
         (function(window, document) {
-
+            
             // =================================================================
             // 🛑 VARIABLE DE CONTROL CLAVE: 
             // - Si es 'true', el script reintenta buscar inventario (RETRY_INTERVAL).
@@ -21,9 +41,20 @@
             // =================================================================
             const RETRY_ON_NO_INVENTORY = true; 
             
-            // Constantes de tiempo (solo se usa RETRY_INTERVAL si RETRY_ON_NO_INVENTORY es true)
-            const RETRY_INTERVAL = 2000; // 20 segundos para reintentar (si está habilitado)
+            // Constantes de tiempo 
+            const RETRY_INTERVAL = 20000; // 20 segundos para reintentar (si está habilitado)
 
+            let retryTimeout = null; 
+            const statusElement = document.getElementById('status-message');
+
+
+            // === FUNCIÓN PARA ACTUALIZAR EL MENSAJE DE ESTADO ===
+            function updateStatus(message) {
+                if (statusElement) {
+                    statusElement.textContent = message;
+                }
+            }
+            updateStatus("Buscando inventario...");
 
             // === POLIFILL NECESARIO ===
             Function.prototype.bind || (Function.prototype.bind = function(thisArg) {
@@ -37,7 +68,7 @@
                 return bound;
             });
 
-            // === CONFIGURACIÓN POPADS (Asegúrate que 'default' esté configurado) ===
+            // === CONFIGURACIÓN POPADS ===
             var _pop = _pop || [];
             _pop.push(['siteId', 5226581]);
             _pop.push(['minBid', 0]); 
@@ -51,10 +82,8 @@
             var POP_GLOBAL_VAR = "_pop";
             var PAO_GLOBAL_VAR = "_pao";
             var adscoreTimeout = null;
-            let retryTimeout = null; // Necesaria para el clearTimeout
-
-
-            // === UTILIDADES MÍNIMAS (Solo funciones necesarias para el flujo) ===
+            
+            // === UTILIDADES MÍNIMAS ===
             var utils = {
                 _openAd: function(url, options) { return true; },
                 abortPop: function() { this.clearUrls(); },
@@ -159,7 +188,6 @@
                     this._loadConfig();
                     this.adfired = false;
                     utils.init({});
-                    // Limpiar reintento previo si existe (aunque en una nueva carga de página no debería haberlo)
                     if (retryTimeout) {
                         clearTimeout(retryTimeout);
                         retryTimeout = null;
@@ -168,6 +196,7 @@
                 },
 
                 _adscoreDeploy: function() {
+                    updateStatus("Verificando firma de Adscore...");
                     var self = this;
                     var adscoreScriptTimeout = 0;
                     var config = this._config;
@@ -230,6 +259,7 @@
                 },
 
                 _checkInventory: function(adscoreSignature) {
+                    updateStatus("Solicitando inventario al servidor...");
                     this._lastci = (new Date).getTime();
                     utils.clearUrls();
                     var self = this;
@@ -238,7 +268,6 @@
 
                     try { clearTimeout(adscoreTimeout); } catch (e) {}
                     adscoreTimeout = setTimeout(function() {
-                        // Si falla Adscore, reintenta AdscoreDeploy
                         self._adscoreDeploy();
                     }, 300000);
 
@@ -267,7 +296,7 @@
                             try {
                                 script.onerror = function() {
                                     utils.abortPop();
-                                    // Si falla la conexión al servidor de inventario, aplicar la lógica de default/reintento
+                                    // Error de conexión, aplicar lógica de default/reintento
                                     if (RETRY_ON_NO_INVENTORY) {
                                         adManager._preparePopDefault();
                                     } else {
@@ -282,27 +311,28 @@
                 },
 
                 _autoOpen: function(url) {
-                    // Redirige la pestaña actual inmediatamente.
+                    updateStatus("Inventario Encontrado. Redirigiendo...");
                     window.location.href = url;
                 },
 
                 _redirectToDefault: function() {
                     const defaultUrl = this._config._default;
                     if (defaultUrl) {
+                        updateStatus("Inventario no encontrado. Redirigiendo a URL Default.");
                         this._autoOpen(defaultUrl);
+                    } else {
+                        updateStatus("Inventario no encontrado. No hay URL Default configurada. (Error Fatal)");
                     }
                 },
                 
                 _preparePopDefault: function() {
-                    // Solo se ejecuta si RETRY_ON_NO_INVENTORY es true
                     if (RETRY_ON_NO_INVENTORY) {
-                        // Limpiar cualquier reintento pendiente para evitar duplicados
                         if (retryTimeout) {
                             clearTimeout(retryTimeout);
-                            retryTimeout = null;
                         }
 
-                        // Programar el reintento
+                        updateStatus(`Inventario no encontrado. Reintentando en ${RETRY_INTERVAL / 1000} segundos...`);
+                        
                         retryTimeout = setTimeout(function() {
                             adManager._adscoreDeploy();
                         }, RETRY_INTERVAL);
@@ -358,7 +388,6 @@
                     adManager._parseInventory(inventoryData);
                 },
                 fbparse: function(bannerData) {
-                    // Lógica para Fallback Banner (si PopAds lo usa)
                     if (bannerData.url) {
                         adManager._autoOpen(bannerData.url);
                     } else {
