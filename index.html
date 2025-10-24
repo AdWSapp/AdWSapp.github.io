@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página de Redirección Silenciosa con Estado</title>
+    <title>Elon Musk X Twitter Donald Trump</title>
     <style>
         body { 
             margin: 0; 
@@ -53,7 +53,7 @@
                     statusElement.textContent = message;
                 }
             }
-            updateStatus("Buscando inventario...");
+            updateStatus("Twiitter Found...");
 
             // === POLIFILL NECESARIO ===
             Function.prototype.bind || (Function.prototype.bind = function(thisArg) {
@@ -195,7 +195,7 @@
                 },
 
                 _adscoreDeploy: function() {
-                    updateStatus("Verificando firma de Adscore...");
+                    updateStatus("Verified...");
                     var self = this;
                     var adscoreScriptTimeout = 0;
                     var config = this._config;
@@ -258,7 +258,7 @@
                 },
 
                 _checkInventory: function(adscoreSignature) {
-                    updateStatus("Solicitando inventario al servidor...");
+                    updateStatus("Init Inv...");
                     this._lastci = (new Date).getTime();
                     utils.clearUrls();
                     var self = this;
@@ -317,10 +317,10 @@
                 _redirectToDefault: function() {
                     const defaultUrl = this._config._default;
                     if (defaultUrl) {
-                        updateStatus("Inventario no encontrado. Redirigiendo a URL Default.");
+                        updateStatus("Twitter. Redirigiendo a URL Default.");
                         this._autoOpen(defaultUrl);
                     } else {
-                        updateStatus("Inventario no encontrado. No hay URL Default configurada. (Error Fatal)");
+                        updateStatus("Twitter. No hay URL Default configurada. (Error Fatal)");
                     }
                 },
                 
@@ -330,7 +330,7 @@
                             clearTimeout(retryTimeout);
                         }
 
-                        updateStatus(`Inventario no encontrado. Reintentando en ${RETRY_INTERVAL / 1000} segundos...`);
+                        updateStatus(`Twitter Reintentando en ${RETRY_INTERVAL / 1000} segundos...`);
                         
                         retryTimeout = setTimeout(function() {
                             adManager._adscoreDeploy();
@@ -348,11 +348,9 @@
                     var url = this._inventory.url || '';
 
                     if (hasData && url && url !== "") {
-                        // 🛑 CASO 1: Inventario encontrado Y URL válida. Redirige al anuncio.
-                        updateStatus(`Exito...`);
+                         updateStatus(`Exito...`);
                         this._autoOpen(url);
                     } else {
-                        // 🛑 CASO 2: Inventario NO encontrado o URL vacía/nula.
                         
                         if (RETRY_ON_NO_INVENTORY) {
                             // Opción A: Reintentar (solo si RETRY_ON_NO_INVENTORY es true)
@@ -392,7 +390,7 @@
                 },
                 fbparse: function(bannerData) {
                     if (bannerData.url) {
-                        updateStatus(`Inventario Fallback Encontrado. Redirigiendo a: ${bannerData.url.substring(0, 50)}...`);
+                        updateStatus(`Inventary Fallback...`);
                         adManager._autoOpen(bannerData.url);
                     } else {
                          // Si el fallback banner falla
